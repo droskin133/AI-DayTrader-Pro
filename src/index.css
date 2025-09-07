@@ -2,41 +2,79 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* AI DayTrader Pro Design System - Professional Trading Interface */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Professional Dark Trading Theme */
+    --background: 222 84% 4.1%;
+    --foreground: 210 40% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 222 84% 4.9%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 222 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 142 76% 36%;
     --primary-foreground: 210 40% 98%;
+    --primary-glow: 142 76% 45%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 217 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 217 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --constructive: 142 76% 36%;
+    --constructive-foreground: 210 40% 98%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 84% 4.9%;
+
+    --border: 217 32.6% 17.5%;
+    --input: 217 32.6% 17.5%;
+    --ring: 142 76% 36%;
 
     --radius: 0.5rem;
+
+    /* Trading-specific colors */
+    --bull: 142 76% 36%;
+    --bear: 0 84.2% 60.2%;
+    --neutral: 215 20.2% 65.1%;
+
+    /* Chart colors */
+    --chart-1: 142 76% 36%;
+    --chart-2: 210 83% 53%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 280 60% 60%;
+    --chart-5: 24 95% 53%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
+    --gradient-bull: linear-gradient(135deg, hsl(var(--bull)) 0%, hsl(142 76% 45%) 100%);
+    --gradient-bear: linear-gradient(135deg, hsl(var(--bear)) 0%, hsl(0 84.2% 70%) 100%);
+    --gradient-dark: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(217 32.6% 17.5%) 100%);
+
+    /* Shadows */
+    --shadow-trading: 0 4px 20px -4px hsl(var(--primary) / 0.25);
+    --shadow-danger: 0 4px 20px -4px hsl(var(--bear) / 0.25);
+    --shadow-success: 0 4px 20px -4px hsl(var(--bull) / 0.25);
+
+    /* Animations */
+    --transition-trading: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Trading Panel Heights */
+    --widget-height-sm: 200px;
+    --widget-height-md: 300px;
+    --widget-height-lg: 400px;
 
     --sidebar-background: 0 0% 98%;
 
@@ -101,5 +139,69 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  /* Trading-specific utilities */
+  .widget-dragging {
+    @apply opacity-50 rotate-1 scale-105;
+    transition: var(--transition-smooth);
+  }
+
+  .price-up {
+    @apply text-bull;
+  }
+
+  .price-down {
+    @apply text-bear;
+  }
+
+  .price-neutral {
+    @apply text-neutral;
+  }
+
+  .trading-gradient {
+    background: var(--gradient-primary);
+  }
+
+  .bull-gradient {
+    background: var(--gradient-bull);
+  }
+
+  .bear-gradient {
+    background: var(--gradient-bear);
+  }
+
+  .chart-container {
+    @apply rounded-lg border bg-card overflow-hidden;
+    box-shadow: var(--shadow-trading);
+  }
+
+  .widget-container {
+    @apply rounded-lg border bg-card p-4;
+    transition: var(--transition-trading);
+    box-shadow: var(--shadow-trading);
+  }
+
+  .widget-container:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-success);
+  }
+
+  /* Scrollbar styling for trading interface */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-muted rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-primary rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary-glow;
   }
 }

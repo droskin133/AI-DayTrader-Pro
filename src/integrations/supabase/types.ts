@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_autoscan_results: {
+        Row: {
+          alert_json: Json | null
+          confidence: number | null
+          detected_pattern: string | null
+          id: string
+          scanned_at: string | null
+          symbol: string
+        }
+        Insert: {
+          alert_json?: Json | null
+          confidence?: number | null
+          detected_pattern?: string | null
+          id?: string
+          scanned_at?: string | null
+          symbol: string
+        }
+        Update: {
+          alert_json?: Json | null
+          confidence?: number | null
+          detected_pattern?: string | null
+          id?: string
+          scanned_at?: string | null
+          symbol?: string
+        }
+        Relationships: []
+      }
+      ai_configs: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      ai_feedback: {
+        Row: {
+          created_at: string | null
+          feature: string | null
+          id: string
+          prompt: string | null
+          response: string | null
+          thumbs_up: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          feature?: string | null
+          id?: string
+          prompt?: string | null
+          response?: string | null
+          thumbs_up?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          feature?: string | null
+          id?: string
+          prompt?: string | null
+          response?: string | null
+          thumbs_up?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       ai_performance_daily: {
         Row: {
           alerts_total: number
@@ -49,6 +127,78 @@ export type Database = {
           win_rate?: number | null
         }
         Relationships: []
+      }
+      ai_suggestion_scores: {
+        Row: {
+          ai_tool: Database["public"]["Enums"]["ai_tool_enum"]
+          created_at: string | null
+          feedback_score: number | null
+          id: string
+          stock_id: string | null
+          suggestion: string | null
+          user_id: string | null
+        }
+        Insert: {
+          ai_tool: Database["public"]["Enums"]["ai_tool_enum"]
+          created_at?: string | null
+          feedback_score?: number | null
+          id?: string
+          stock_id?: string | null
+          suggestion?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          ai_tool?: Database["public"]["Enums"]["ai_tool_enum"]
+          created_at?: string | null
+          feedback_score?: number | null
+          id?: string
+          stock_id?: string | null
+          suggestion?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      alert_events: {
+        Row: {
+          alert_id: string
+          delivered: boolean
+          delivered_at: string | null
+          fired_at: string
+          id: number
+          payload: Json
+        }
+        Insert: {
+          alert_id: string
+          delivered?: boolean
+          delivered_at?: string | null
+          fired_at?: string
+          id?: number
+          payload: Json
+        }
+        Update: {
+          alert_id?: string
+          delivered?: boolean
+          delivered_at?: string | null
+          fired_at?: string
+          id?: number
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_events_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alert_events_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "user_alerts_view"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       alert_triggers: {
         Row: {
@@ -104,6 +254,13 @@ export type Database = {
             referencedRelation: "alerts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "alert_triggers_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "user_alerts_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       alerts: {
@@ -112,10 +269,12 @@ export type Database = {
           created_at: string
           expires_at: string | null
           id: string
+          owner: string
           source: Database["public"]["Enums"]["alert_source_enum"]
           status: string
           ticker: string
           triggered_at: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -123,10 +282,12 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          owner: string
           source?: Database["public"]["Enums"]["alert_source_enum"]
           status?: string
           ticker: string
           triggered_at?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -134,13 +295,57 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          owner?: string
           source?: Database["public"]["Enums"]["alert_source_enum"]
           status?: string
           ticker?: string
           triggered_at?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      alerts_fired: {
+        Row: {
+          alert_id: string | null
+          fired_at: string | null
+          id: string
+          result_data: Json | null
+          symbol: string | null
+          user_id: string | null
+        }
+        Insert: {
+          alert_id?: string | null
+          fired_at?: string | null
+          id?: string
+          result_data?: Json | null
+          symbol?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          alert_id?: string | null
+          fired_at?: string | null
+          id?: string
+          result_data?: Json | null
+          symbol?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_fired_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alerts_fired_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "user_alerts_view"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       annotations: {
         Row: {
@@ -168,6 +373,167 @@ export type Database = {
           id?: string
           ticker?: string
           type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      announcements: {
+        Row: {
+          audience: Database["public"]["Enums"]["user_role_enum"][] | null
+          content: string
+          created_at: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          audience?: Database["public"]["Enums"]["user_role_enum"][] | null
+          content: string
+          created_at?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          audience?: Database["public"]["Enums"]["user_role_enum"][] | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      api_usage: {
+        Row: {
+          last_reset: string | null
+          request_count: number | null
+          user_id: string
+        }
+        Insert: {
+          last_reset?: string | null
+          request_count?: number | null
+          user_id: string
+        }
+        Update: {
+          last_reset?: string | null
+          request_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      audit_log: {
+        Row: {
+          action: string
+          actor: string
+          created_at: string
+          id: number
+          meta: Json
+          target: string | null
+        }
+        Insert: {
+          action: string
+          actor: string
+          created_at?: string
+          id?: number
+          meta?: Json
+          target?: string | null
+        }
+        Update: {
+          action?: string
+          actor?: string
+          created_at?: string
+          id?: number
+          meta?: Json
+          target?: string | null
+        }
+        Relationships: []
+      }
+      backtest_results: {
+        Row: {
+          backtest_id: string
+          created_at: string
+          id: number
+          metrics: Json
+          symbol: string
+        }
+        Insert: {
+          backtest_id: string
+          created_at?: string
+          id?: number
+          metrics: Json
+          symbol: string
+        }
+        Update: {
+          backtest_id?: string
+          created_at?: string
+          id?: number
+          metrics?: Json
+          symbol?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backtest_results_backtest_id_fkey"
+            columns: ["backtest_id"]
+            isOneToOne: false
+            referencedRelation: "backtests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      backtests: {
+        Row: {
+          completed_at: string | null
+          id: string
+          name: string
+          owner: string
+          requested_at: string
+          result_summary: Json | null
+          status: string
+          strategy: Json
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          name: string
+          owner: string
+          requested_at?: string
+          result_summary?: Json | null
+          status?: string
+          strategy: Json
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          name?: string
+          owner?: string
+          requested_at?: string
+          result_summary?: Json | null
+          status?: string
+          strategy?: Json
+        }
+        Relationships: []
+      }
+      billing_accounts: {
+        Row: {
+          created_at: string
+          plan: string
+          status: string
+          stripe_customer_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          plan?: string
+          status?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          plan?: string
+          status?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -214,6 +580,189 @@ export type Database = {
         }
         Relationships: []
       }
+      device_sessions: {
+        Row: {
+          created_at: string | null
+          device_info: Json | null
+          id: string
+          last_active: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          last_active?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          last_active?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      drivers: {
+        Row: {
+          created_at: string | null
+          event_date: string | null
+          event_type: string
+          headline: string
+          id: string
+          impact_summary: string | null
+          source_url: string | null
+          stock_ticker: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_date?: string | null
+          event_type: string
+          headline: string
+          id?: string
+          impact_summary?: string | null
+          source_url?: string | null
+          stock_ticker: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_date?: string | null
+          event_type?: string
+          headline?: string
+          id?: string
+          impact_summary?: string | null
+          source_url?: string | null
+          stock_ticker?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      export_logs: {
+        Row: {
+          exported_at: string | null
+          format: string | null
+          id: string
+          table_exported: string | null
+          user_id: string | null
+        }
+        Insert: {
+          exported_at?: string | null
+          format?: string | null
+          id?: string
+          table_exported?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          exported_at?: string | null
+          format?: string | null
+          id?: string
+          table_exported?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      export_requests: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          requested_by: string
+          scope: string
+          status: string
+          token: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          requested_by: string
+          scope: string
+          status?: string
+          token?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          requested_by?: string
+          scope?: string
+          status?: string
+          token?: string | null
+        }
+        Relationships: []
+      }
+      feature_flags: {
+        Row: {
+          is_enabled: boolean
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          is_enabled?: boolean
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          is_enabled?: boolean
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      function_logs: {
+        Row: {
+          created_at: string | null
+          function_name: string | null
+          id: string
+          log_message: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          function_name?: string | null
+          id?: string
+          log_message?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          function_name?: string | null
+          id?: string
+          log_message?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      impersonation_logs: {
+        Row: {
+          admin_user: string
+          id: string
+          target_user: string
+          timestamp: string | null
+        }
+        Insert: {
+          admin_user: string
+          id?: string
+          target_user: string
+          timestamp?: string | null
+        }
+        Update: {
+          admin_user?: string
+          id?: string
+          target_user?: string
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
       institutional_ownership: {
         Row: {
           filer_cik: string | null
@@ -250,6 +799,62 @@ export type Database = {
           shares?: number | null
           source_url?: string | null
           ticker?: string
+        }
+        Relationships: []
+      }
+      legal_acceptances: {
+        Row: {
+          accepted_at: string | null
+          legal_text_id: number | null
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          legal_text_id?: number | null
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          legal_text_id?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_acceptances_legal_text_id_fkey"
+            columns: ["legal_text_id"]
+            isOneToOne: false
+            referencedRelation: "legal_texts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_texts: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          id: number
+          is_active: boolean
+          kind: string
+          version: number
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          id?: number
+          is_active?: boolean
+          kind: string
+          version: number
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: number
+          is_active?: boolean
+          kind?: string
+          version?: number
         }
         Relationships: []
       }
@@ -340,6 +945,30 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_throttles: {
+        Row: {
+          max_alerts: number
+          max_backtests: number
+          plan: string
+          rpd: number
+          rpm: number
+        }
+        Insert: {
+          max_alerts: number
+          max_backtests: number
+          plan: string
+          rpd: number
+          rpm: number
+        }
+        Update: {
+          max_alerts?: number
+          max_backtests?: number
+          plan?: string
+          rpd?: number
+          rpm?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -366,6 +995,104 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role_enum"] | null
         }
         Relationships: []
+      }
+      prompt_templates: {
+        Row: {
+          id: string
+          last_tuned: string | null
+          template_content: string | null
+          template_name: string | null
+        }
+        Insert: {
+          id?: string
+          last_tuned?: string | null
+          template_content?: string | null
+          template_name?: string | null
+        }
+        Update: {
+          id?: string
+          last_tuned?: string | null
+          template_content?: string | null
+          template_name?: string | null
+        }
+        Relationships: []
+      }
+      push_notifications: {
+        Row: {
+          body: string | null
+          id: string
+          sent_at: string | null
+          title: string | null
+          user_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          id?: string
+          sent_at?: string | null
+          title?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          id?: string
+          sent_at?: string | null
+          title?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      scenarios: {
+        Row: {
+          created_at: string | null
+          driver_id: string | null
+          eps_best: number | null
+          eps_mid: number | null
+          eps_worst: number | null
+          id: string
+          price_best: number | null
+          price_mid: number | null
+          price_worst: number | null
+          stock_ticker: string
+          updated_at: string | null
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          driver_id?: string | null
+          eps_best?: number | null
+          eps_mid?: number | null
+          eps_worst?: number | null
+          id?: string
+          price_best?: number | null
+          price_mid?: number | null
+          price_worst?: number | null
+          stock_ticker: string
+          updated_at?: string | null
+          year: number
+        }
+        Update: {
+          created_at?: string | null
+          driver_id?: string | null
+          eps_best?: number | null
+          eps_mid?: number | null
+          eps_worst?: number | null
+          id?: string
+          price_best?: number | null
+          price_mid?: number | null
+          price_worst?: number | null
+          stock_ticker?: string
+          updated_at?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenarios_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sec_filings: {
         Row: {
@@ -412,6 +1139,24 @@ export type Database = {
         }
         Relationships: []
       }
+      stocks: {
+        Row: {
+          company_name: string | null
+          id: string
+          symbol: string
+        }
+        Insert: {
+          company_name?: string | null
+          id?: string
+          symbol: string
+        }
+        Update: {
+          company_name?: string | null
+          id?: string
+          symbol?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
@@ -448,11 +1193,66 @@ export type Database = {
         }
         Relationships: []
       }
+      system_config: {
+        Row: {
+          key: string
+          updated_at: string | null
+          value: string | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Relationships: []
+      }
+      user_legal_acceptance: {
+        Row: {
+          agreed_at: string | null
+          user_id: string
+        }
+        Insert: {
+          agreed_at?: string | null
+          user_id: string
+        }
+        Update: {
+          agreed_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          created_at: string
+          role: Database["public"]["Enums"]["user_role_enum"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          role?: Database["public"]["Enums"]["user_role_enum"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: Database["public"]["Enums"]["user_role_enum"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           ai_suggestions_default: boolean
           created_at: string
           email_notifications: boolean
+          legal_accept: string | null
           push_notifications: boolean
           theme: string
           updated_at: string
@@ -462,6 +1262,7 @@ export type Database = {
           ai_suggestions_default?: boolean
           created_at?: string
           email_notifications?: boolean
+          legal_accept?: string | null
           push_notifications?: boolean
           theme?: string
           updated_at?: string
@@ -471,10 +1272,71 @@ export type Database = {
           ai_suggestions_default?: boolean
           created_at?: string
           email_notifications?: boolean
+          legal_accept?: string | null
           push_notifications?: boolean
           theme?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      vendor_configs: {
+        Row: {
+          api_key: string
+          created_at: string
+          created_by: string
+          id: number
+          meta: Json
+          scope: string
+          updated_at: string
+          vendor: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          created_by: string
+          id?: number
+          meta?: Json
+          scope?: string
+          updated_at?: string
+          vendor: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          created_by?: string
+          id?: number
+          meta?: Json
+          scope?: string
+          updated_at?: string
+          vendor?: string
+        }
+        Relationships: []
+      }
+      vendor_keys: {
+        Row: {
+          created_at: string | null
+          id: string
+          key_value: string
+          scope: Database["public"]["Enums"]["user_role_enum"] | null
+          updated_at: string | null
+          vendor: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key_value: string
+          scope?: Database["public"]["Enums"]["user_role_enum"] | null
+          updated_at?: string | null
+          vendor: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key_value?: string
+          scope?: Database["public"]["Enums"]["user_role_enum"] | null
+          updated_at?: string | null
+          vendor?: string
         }
         Relationships: []
       }
@@ -496,6 +1358,27 @@ export type Database = {
           id?: string
           ticker?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      watchlist_tags: {
+        Row: {
+          color: string | null
+          id: string
+          name: string
+          user_id: string | null
+        }
+        Insert: {
+          color?: string | null
+          id?: string
+          name: string
+          user_id?: string | null
+        }
+        Update: {
+          color?: string | null
+          id?: string
+          name?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -525,16 +1408,203 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      ai_scan_top_scores_view: {
+        Row: {
+          alert_json: Json | null
+          confidence: number | null
+          detected_pattern: string | null
+          id: string | null
+          scanned_at: string | null
+          symbol: string | null
+        }
+        Insert: {
+          alert_json?: Json | null
+          confidence?: number | null
+          detected_pattern?: string | null
+          id?: string | null
+          scanned_at?: string | null
+          symbol?: string | null
+        }
+        Update: {
+          alert_json?: Json | null
+          confidence?: number | null
+          detected_pattern?: string | null
+          id?: string | null
+          scanned_at?: string | null
+          symbol?: string | null
+        }
+        Relationships: []
+      }
+      user_alerts_view: {
+        Row: {
+          condition: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string | null
+          owner: string | null
+          source: Database["public"]["Enums"]["alert_source_enum"] | null
+          status: string | null
+          ticker: string | null
+          triggered_at: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          condition?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string | null
+          owner?: string | null
+          source?: Database["public"]["Enums"]["alert_source_enum"] | null
+          status?: string | null
+          ticker?: string | null
+          triggered_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          condition?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string | null
+          owner?: string | null
+          source?: Database["public"]["Enums"]["alert_source_enum"] | null
+          status?: string | null
+          ticker?: string | null
+          triggered_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      admin_set_role: {
+        Args: { p_role: string; p_user: string }
+        Returns: undefined
+      }
+      ai_config_set: {
+        Args: { _key: string; _value: Json }
+        Returns: undefined
+      }
+      audit_impersonation: {
+        Args: { target_user: string }
+        Returns: undefined
+      }
+      audit_write: {
+        Args: { _action: string; _meta?: Json; _target: string }
+        Returns: undefined
+      }
+      autonomous_ai_scan: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      expire_alerts: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      export_approve_full: {
+        Args: { _export_id: string }
+        Returns: undefined
+      }
+      export_logger: {
+        Args: { type: string }
+        Returns: undefined
+      }
+      flag_set: {
+        Args: { _is_enabled: boolean; _key: string; _value?: Json }
+        Returns: undefined
+      }
+      legal_acceptance: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      legal_upsert: {
+        Args: { _activate?: boolean; _content: string; _kind: string }
+        Returns: undefined
+      }
+      process_alerts: {
+        Args: {
+          alert_json: Json
+          alert_type: Database["public"]["Enums"]["alert_type_enum"]
+        }
+        Returns: undefined
+      }
+      prompt_optimizer: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      rating_handler: {
+        Args: { prompt_id: string; rating: number }
+        Returns: undefined
+      }
+      rbac_grant_admin: {
+        Args: { target: string }
+        Returns: undefined
+      }
+      rbac_revoke_admin: {
+        Args: { target: string }
+        Returns: undefined
+      }
+      rbac_transfer_presidency: {
+        Args: { new_president: string }
+        Returns: undefined
+      }
+      reset_throttle: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      run_backtest: {
+        Args: { alert_id: string }
+        Returns: Json
+      }
+      send_push_notification: {
+        Args: { body: string; title: string }
+        Returns: undefined
+      }
+      throttle_set: {
+        Args: {
+          _max_alerts: number
+          _max_backtests: number
+          _plan: string
+          _rpd: number
+          _rpm: number
+        }
+        Returns: undefined
+      }
+      toggle_watchlist: {
+        Args: { ticker: string }
+        Returns: undefined
+      }
+      trigger_alerts: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      vendor_set: {
+        Args: {
+          _api_key: string
+          _meta?: Json
+          _scope: string
+          _vendor: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
+      ai_tool_enum: "alpha_scout" | "chart_gpt" | "deep_scanner" | "news_sweep"
       alert_source_enum: "user" | "ai" | "community"
+      alert_type_enum: "price" | "volume" | "news" | "technical" | "custom"
       notification_type_enum: "alert_trigger" | "system" | "news"
       plan_enum: "basic" | "premium" | "trial"
-      user_role_enum: "admin" | "president" | "premium" | "basic" | "trial"
+      user_role_enum:
+        | "admin"
+        | "president"
+        | "premium"
+        | "basic"
+        | "trial"
+        | "premium_user"
+        | "free_user"
+        | "free"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -662,10 +1732,21 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      ai_tool_enum: ["alpha_scout", "chart_gpt", "deep_scanner", "news_sweep"],
       alert_source_enum: ["user", "ai", "community"],
+      alert_type_enum: ["price", "volume", "news", "technical", "custom"],
       notification_type_enum: ["alert_trigger", "system", "news"],
       plan_enum: ["basic", "premium", "trial"],
-      user_role_enum: ["admin", "president", "premium", "basic", "trial"],
+      user_role_enum: [
+        "admin",
+        "president",
+        "premium",
+        "basic",
+        "trial",
+        "premium_user",
+        "free_user",
+        "free",
+      ],
     },
   },
 } as const

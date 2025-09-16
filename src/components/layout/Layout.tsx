@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { Header } from './Header';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -8,6 +9,10 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
+  
+  // Allow access to auth pages without being logged in
+  const isAuthPage = ['/signin', '/signup', '/paywall'].includes(location.pathname);
 
   if (loading) {
     return (
@@ -17,7 +22,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     );
   }
 
-  if (!user) {
+  // If user is not authenticated and not on auth page, show landing with auth buttons
+  if (!user && !isAuthPage) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="max-w-md w-full p-6">
@@ -53,6 +59,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </div>
     );
+  }
+
+  // If on auth pages, show without header
+  if (isAuthPage) {
+    return <div className="min-h-screen bg-background">{children}</div>;
   }
 
   return (

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Bell, Settings, CreditCard, FileText, LogOut } from 'lucide-react';
+import { Search, Bell, Settings, CreditCard, FileText, LogOut, BarChart3, Shield } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,11 +13,24 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { DisclaimerModal } from '@/components/legal/DisclaimerModal';
 
 export const Header: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Show disclaimer modal on first login or when legal terms change
+    if (user) {
+      const hasAcceptedKey = `legal_accepted_${user.id}_1.0`;
+      const hasAcceptedBefore = localStorage.getItem(hasAcceptedKey);
+      if (!hasAcceptedBefore) {
+        setShowDisclaimer(true);
+      }
+    }
+  }, [user]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +58,17 @@ export const Header: React.FC = () => {
           </div>
           <span className="text-xl font-bold">DayTrader Pro</span>
         </Link>
+
+        {/* Navigation Links */}
+        <nav className="hidden md:flex space-x-6">
+          <Button variant="ghost" onClick={() => navigate('/alerts')}>
+            Alerts
+          </Button>
+          <Button variant="ghost" onClick={() => navigate('/backtests')}>
+            <BarChart3 className="mr-2 h-4 w-4" />
+            Backtests
+          </Button>
+        </nav>
 
         {/* Search */}
         <div className="flex-1 max-w-md mx-8">
@@ -116,6 +140,12 @@ export const Header: React.FC = () => {
                   <span>Legal</span>
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/admin">
+                  <Shield className="mr-2 h-4 w-4" />
+                  <span>Admin Panel</span>
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />
@@ -125,6 +155,11 @@ export const Header: React.FC = () => {
           </DropdownMenu>
         </div>
       </div>
+      
+      <DisclaimerModal 
+        isOpen={showDisclaimer} 
+        onAccept={() => setShowDisclaimer(false)}
+      />
     </header>
   );
 };

@@ -9,6 +9,7 @@ import { AIStockAnalysis } from '@/components/ai/AIStockAnalysis';
 import { StockNews } from '@/components/stock/StockNews';
 import { StockAlerts } from '@/components/stock/StockAlerts';
 import { InstitutionalData } from '@/components/stock/InstitutionalData';
+import { DriversList } from '@/components/drivers/DriversList';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Stock: React.FC = () => {
@@ -175,6 +176,7 @@ const Stock: React.FC = () => {
           {/* Right Column - Analysis & Data */}
           <div className="space-y-6">
             <AIStockAnalysis ticker={ticker} />
+            <DriversList ticker={ticker} />
             <StockNews ticker={ticker} />
             <InstitutionalData ticker={ticker} />
             <StockAlerts ticker={ticker} />

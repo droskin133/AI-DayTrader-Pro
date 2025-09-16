@@ -13,6 +13,8 @@ import News from "./pages/News";
 import Settings from "./pages/Settings";
 import Billing from "./pages/Billing";
 import Legal from "./pages/Legal";
+import Backtests from "./pages/Backtests";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +36,8 @@ const App = () => (
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/billing" element={<Billing />} />
                 <Route path="/legal" element={<Legal />} />
+                <Route path="/backtests" element={<Backtests />} />
+                <Route path="/admin" element={<Admin />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Layout>

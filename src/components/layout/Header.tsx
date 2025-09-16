@@ -102,7 +102,7 @@ export const Header: React.FC = () => {
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
                   <span className="text-sm font-medium text-primary-foreground">
-                    {user?.email?.substring(0, 2).toUpperCase() || 'TD'}
+                    {user?.email?.substring(0, 2).toUpperCase() || 'AI'}
                   </span>
                 </div>
               </Button>

@@ -10,7 +10,10 @@ import { StockNews } from '@/components/stock/StockNews';
 import { StockAlerts } from '@/components/stock/StockAlerts';
 import { InstitutionalData } from '@/components/stock/InstitutionalData';
 import { DriversList } from '@/components/drivers/DriversList';
+import { ChartGPT } from '@/components/ai/ChartGPT';
+import { AISuggestions } from '@/components/alerts/AISuggestions';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const Stock: React.FC = () => {
   const { ticker } = useParams<{ ticker: string }>();
@@ -51,8 +54,21 @@ const Stock: React.FC = () => {
   };
 
   const checkWatchlistStatus = async (symbol: string) => {
-    // Check if stock is in user's watchlist
-    setIsInWatchlist(false);
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('watchlist')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('ticker', symbol)
+        .single();
+      
+      setIsInWatchlist(!!data && !error);
+    } catch (error) {
+      console.error('Error checking watchlist status:', error);
+      setIsInWatchlist(false);
+    }
   };
 
   const toggleWatchlist = async () => {
@@ -61,10 +77,27 @@ const Stock: React.FC = () => {
     try {
       if (isInWatchlist) {
         // Remove from watchlist
-        setIsInWatchlist(false);
+        const { error } = await supabase
+          .from('watchlist')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('ticker', ticker);
+        
+        if (!error) {
+          setIsInWatchlist(false);
+        }
       } else {
         // Add to watchlist
-        setIsInWatchlist(true);
+        const { error } = await supabase
+          .from('watchlist')
+          .insert({
+            user_id: user.id,
+            ticker: ticker
+          });
+        
+        if (!error) {
+          setIsInWatchlist(true);
+        }
       }
     } catch (error) {
       console.error('Error updating watchlist:', error);
@@ -176,7 +209,9 @@ const Stock: React.FC = () => {
           {/* Right Column - Analysis & Data */}
           <div className="space-y-6">
             <AIStockAnalysis ticker={ticker} />
+            <ChartGPT ticker={ticker} />
             <DriversList ticker={ticker} />
+            <AISuggestions ticker={ticker} />
             <StockNews ticker={ticker} />
             <InstitutionalData ticker={ticker} />
             <StockAlerts ticker={ticker} />

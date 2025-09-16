@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, Plus, Target, Clock, Brain } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface StockAlertsProps {
   ticker?: string;
@@ -19,9 +21,53 @@ interface Alert {
 
 export const StockAlerts: React.FC<StockAlertsProps> = ({ ticker = 'AAPL' }) => {
   const [showCreateAlert, setShowCreateAlert] = useState(false);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
-  // Mock alerts specific to this ticker
-  const alerts: Alert[] = [
+  useEffect(() => {
+    if (ticker && user) {
+      fetchAlerts();
+    }
+  }, [ticker, user]);
+
+  const fetchAlerts = async () => {
+    if (!user || !ticker) return;
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('alerts')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('ticker', ticker)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching alerts:', error);
+        setAlerts([]);
+      } else {
+        // Transform to match our interface
+        const transformedAlerts: Alert[] = (data || []).map(alert => ({
+          id: alert.id,
+          condition: alert.condition,
+          status: alert.status as 'active' | 'triggered' | 'expired',
+          source: alert.source as 'user' | 'ai',
+          createdAt: alert.created_at,
+          expiresAt: alert.expires_at
+        }));
+        setAlerts(transformedAlerts);
+      }
+    } catch (error) {
+      console.error('Error fetching alerts:', error);
+      setAlerts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mock alerts fallback if no user or no data
+  const mockAlerts: Alert[] = [
     {
       id: '1',
       condition: 'Price above $180',

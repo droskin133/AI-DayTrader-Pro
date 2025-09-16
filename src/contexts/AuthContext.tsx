@@ -6,6 +6,8 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
+  signIn: (email: string, password: string) => Promise<{ error: any }>
+  signUp: (email: string, password: string) => Promise<{ error: any }>
   signOut: () => Promise<void>
 }
 
@@ -40,6 +42,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => subscription.unsubscribe()
   }, [])
 
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+    return { error }
+  }
+
+  const signUp = async (email: string, password: string) => {
+    const redirectUrl = `${window.location.origin}/`
+    
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl
+      }
+    })
+    return { error }
+  }
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) {
@@ -48,7 +71,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   )

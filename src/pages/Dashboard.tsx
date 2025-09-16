@@ -62,7 +62,7 @@ const Dashboard: React.FC = () => {
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-2">Trading Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome back, {user?.full_name || 'Trader'}. Monitor markets and AI insights in real-time.
+            Welcome back, {user?.email?.split('@')[0] || 'Trader'}. Monitor markets and AI insights in real-time.
           </p>
         </div>
 

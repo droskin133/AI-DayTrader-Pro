@@ -60,13 +60,13 @@ const Settings: React.FC = () => {
                 <div className="flex items-center space-x-4">
                   <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center">
                     <span className="text-2xl font-bold text-primary-foreground">
-                      {user?.initials || 'TD'}
+                      {user?.email?.substring(0, 2).toUpperCase() || 'TD'}
                     </span>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold">{user?.full_name || 'Trader'}</h3>
+                    <h3 className="text-lg font-semibold">{user?.email?.split('@')[0] || 'Trader'}</h3>
                     <p className="text-muted-foreground">{user?.email}</p>
-                    <p className="text-sm text-primary font-medium">{user?.role?.toUpperCase()} Plan</p>
+                    <p className="text-sm text-primary font-medium">FREE Plan</p>
                   </div>
                 </div>
 
@@ -75,7 +75,7 @@ const Settings: React.FC = () => {
                     <Label htmlFor="fullName">Full Name</Label>
                     <Input
                       id="fullName"
-                      value={user?.full_name || ''}
+                      value={user?.email?.split('@')[0] || ''}
                       placeholder="Enter your full name"
                     />
                   </div>

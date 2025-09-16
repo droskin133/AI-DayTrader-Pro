@@ -102,7 +102,7 @@ export const Header: React.FC = () => {
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
                   <span className="text-sm font-medium text-primary-foreground">
-                    {user?.initials || user?.email?.substring(0, 2).toUpperCase()}
+                    {user?.email?.substring(0, 2).toUpperCase() || 'TD'}
                   </span>
                 </div>
               </Button>
@@ -111,13 +111,13 @@ export const Header: React.FC = () => {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">
-                    {user?.full_name || 'Trader'}
+                    {user?.email?.split('@')[0] || 'Trader'}
                   </p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {user?.email}
                   </p>
                   <Badge variant="outline" className="w-fit text-xs mt-1">
-                    {user?.role?.toUpperCase()}
+                    FREE
                   </Badge>
                 </div>
               </DropdownMenuLabel>

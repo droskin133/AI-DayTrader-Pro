@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { ScenarioChart } from './ScenarioChart';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Driver {
   id: string;
@@ -33,39 +35,22 @@ export const DriversList: React.FC<DriversListProps> = ({ ticker }) => {
     try {
       setLoading(true);
       
-      // Mock data for demonstration - will be replaced with real Supabase query when tables are available
-      const mockDrivers: Driver[] = [
-        {
-          id: '1',
-          stock_ticker: symbol,
-          headline: `${symbol} Q4 Earnings Beat Expectations`,
-          impact_summary: 'Strong quarterly results with 15% revenue growth and improved margins',
-          event_date: '2024-01-15',
-          source_url: 'https://example.com/earnings-report'
-        },
-        {
-          id: '2',
-          stock_ticker: symbol,
-          headline: `FDA Approval for ${symbol} New Drug`,
-          impact_summary: 'Major regulatory milestone that could unlock significant market opportunity',
-          event_date: '2024-01-10',
-          source_url: 'https://example.com/fda-approval'
-        },
-        {
-          id: '3',
-          stock_ticker: symbol,
-          headline: `${symbol} Announces Strategic Partnership`,
-          impact_summary: 'Partnership with major tech company could accelerate AI development',
-          event_date: '2024-01-08',
-          source_url: 'https://example.com/partnership'
-        }
-      ];
+      const { data, error } = await supabase
+        .from('drivers')
+        .select('*')
+        .eq('stock_ticker', symbol)
+        .order('event_date', { ascending: false });
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setDrivers(mockDrivers);
+      if (error) {
+        console.error('Error fetching drivers:', error);
+        toast.error('Failed to load market drivers');
+        setDrivers([]);
+      } else {
+        setDrivers(data || []);
+      }
     } catch (error) {
       console.error('Error fetching drivers:', error);
+      toast.error('Failed to load market drivers');
       setDrivers([]);
     } finally {
       setLoading(false);

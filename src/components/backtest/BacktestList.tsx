@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Eye, Play, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface BacktestResult {
   id: string;
@@ -34,55 +36,48 @@ export const BacktestList: React.FC = () => {
   }, [user]);
 
   const fetchBacktests = async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
       
-      // Mock data for demonstration - will be replaced with real Supabase query when tables are available
-      const mockBacktests: BacktestResult[] = [
-        {
-          id: '1',
-          ticker: 'AAPL',
-          strategy_name: 'RSI Oversold Bounce',
-          started_at: '2024-01-15T10:30:00Z',
-          completed_at: '2024-01-15T10:35:00Z',
-          status: 'completed',
-          result: {
-            win_rate: 0.67,
-            avg_return: 0.034,
-            total_trades: 45,
-            max_drawdown: -0.089
-          }
-        },
-        {
-          id: '2',
-          ticker: 'TSLA',
-          strategy_name: 'Breakout + Volume',
-          started_at: '2024-01-14T09:15:00Z',
-          completed_at: '2024-01-14T09:22:00Z',
-          status: 'completed',
-          result: {
-            win_rate: 0.58,
-            avg_return: 0.019,
-            total_trades: 38,
-            max_drawdown: -0.125
-          }
-        },
-        {
-          id: '3',
-          ticker: 'NVDA',
-          strategy_name: 'AI Signal Combo',
-          started_at: '2024-01-13T14:20:00Z',
-          completed_at: null,
-          status: 'running',
-          result: null
-        }
-      ];
+      const { data, error } = await supabase
+        .from('backtests')
+        .select('*')
+        .eq('owner', user.id)
+        .order('requested_at', { ascending: false });
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setBacktests(mockBacktests);
+      if (error) {
+        console.error('Error fetching backtests:', error);
+        toast.error('Failed to load backtest results');
+        setBacktests([]);
+      } else {
+        // Transform data to match component interface
+        const transformedBacktests: BacktestResult[] = (data || []).map(backtest => {
+          const strategy = backtest.strategy as any;
+          const resultSummary = backtest.result_summary as any;
+          
+          return {
+            id: backtest.id,
+            ticker: strategy?.ticker || 'N/A',
+            strategy_name: backtest.name,
+            started_at: backtest.requested_at,
+            completed_at: backtest.completed_at,
+            status: backtest.status as 'running' | 'completed' | 'failed',
+            result: resultSummary ? {
+              win_rate: resultSummary.win_rate,
+              avg_return: resultSummary.avg_return,
+              total_trades: resultSummary.total_trades,
+              max_drawdown: resultSummary.max_drawdown
+            } : null
+          };
+        });
+        
+        setBacktests(transformedBacktests);
+      }
     } catch (error) {
       console.error('Error fetching backtests:', error);
+      toast.error('Failed to load backtest results');
       setBacktests([]);
     } finally {
       setLoading(false);

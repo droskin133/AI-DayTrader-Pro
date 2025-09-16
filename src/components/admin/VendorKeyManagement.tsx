@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Edit, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface VendorKey {
   id: string;
@@ -45,29 +46,43 @@ export const VendorKeyManagement: React.FC = () => {
   ];
 
   useEffect(() => {
-    // Mock data for now - will be replaced when vendor_keys table is available
-    setVendorKeys([
-      {
-        id: '1',
-        vendor: 'openai',
-        scope: 'production',
-        key_value: 'sk-1234567890abcdef',
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: '2',
-        vendor: 'polygon',
-        scope: null,
-        key_value: 'pk-9876543210fedcba',
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    ]);
-    setLoading(false);
+    loadVendorKeys();
   }, []);
+
+  const loadVendorKeys = async () => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('vendor_configs')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching vendor keys:', error);
+        toast.error('Failed to load vendor keys');
+        setVendorKeys([]);
+      } else {
+        // Transform data to match component interface
+        const transformedKeys = (data || []).map(config => ({
+          id: config.vendor + '_' + (config.scope || 'default'),
+          vendor: config.vendor,
+          scope: config.scope,
+          key_value: config.api_key,
+          is_active: true, // vendor_configs doesn't have is_active field
+          created_at: config.created_at || new Date().toISOString(),
+          updated_at: config.updated_at || new Date().toISOString()
+        }));
+        setVendorKeys(transformedKeys);
+      }
+    } catch (error) {
+      console.error('Error fetching vendor keys:', error);
+      toast.error('Failed to load vendor keys');
+      setVendorKeys([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!formData.vendor || !formData.key_value) {
@@ -76,30 +91,27 @@ export const VendorKeyManagement: React.FC = () => {
     }
 
     try {
-      // Mock save for now - will be replaced with actual Supabase calls
-      const newKey: VendorKey = {
-        id: Date.now().toString(),
-        vendor: formData.vendor,
-        scope: formData.scope || null,
-        key_value: formData.key_value,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      // Use vendor_set function to safely manage vendor keys
+      const { error } = await supabase.rpc('vendor_set', {
+        _vendor: formData.vendor,
+        _scope: formData.scope || null,
+        _api_key: formData.key_value,
+        _meta: {}
+      });
 
-      if (editingKey) {
-        setVendorKeys(prev => prev.map(key => 
-          key.id === editingKey.id ? { ...newKey, id: editingKey.id } : key
-        ));
-        toast.success('Vendor key updated');
-      } else {
-        setVendorKeys(prev => [...prev, newKey]);
-        toast.success('Vendor key added');
+      if (error) {
+        console.error('Error saving vendor key:', error);
+        toast.error('Failed to save vendor key: ' + error.message);
+        return;
       }
 
+      toast.success(editingKey ? 'Vendor key updated' : 'Vendor key added');
       setIsDialogOpen(false);
       setEditingKey(null);
       setFormData({ vendor: '', scope: '', key_value: '' });
+      
+      // Reload the keys list
+      await loadVendorKeys();
     } catch (error) {
       console.error('Error saving vendor key:', error);
       toast.error('Failed to save vendor key');
@@ -116,12 +128,27 @@ export const VendorKeyManagement: React.FC = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (keyId: string) => {
+  const handleDelete = async (keyId: string) => {
     if (!confirm('Are you sure you want to delete this vendor key?')) return;
 
     try {
-      setVendorKeys(prev => prev.filter(key => key.id !== keyId));
+      const key = vendorKeys.find(k => k.id === keyId);
+      if (!key) return;
+
+      const { error } = await supabase
+        .from('vendor_configs')
+        .delete()
+        .eq('vendor', key.vendor)
+        .eq('scope', key.scope);
+
+      if (error) {
+        console.error('Error deleting vendor key:', error);
+        toast.error('Failed to delete vendor key: ' + error.message);
+        return;
+      }
+
       toast.success('Vendor key deleted');
+      await loadVendorKeys();
     } catch (error) {
       console.error('Error deleting vendor key:', error);
       toast.error('Failed to delete vendor key');

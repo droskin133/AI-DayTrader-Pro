@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Scenario {
   id: string;
@@ -25,36 +27,57 @@ export const ScenarioChart: React.FC<ScenarioChartProps> = ({ driverId }) => {
     try {
       setLoading(true);
       
-      // Mock data for demonstration - will be replaced with real Supabase query when tables are available
-      const mockScenarios: Scenario[] = [
-        {
-          id: '1',
-          scenario_type: 'worst',
-          eps_estimate: 2.10,
-          price_target: 145.00,
-          probability: 20
-        },
-        {
-          id: '2',
-          scenario_type: 'mid',
-          eps_estimate: 2.45,
-          price_target: 175.00,
-          probability: 60
-        },
-        {
-          id: '3',
-          scenario_type: 'best',
-          eps_estimate: 2.80,
-          price_target: 210.00,
-          probability: 20
-        }
-      ];
+      const { data, error } = await supabase
+        .from('scenarios')
+        .select('*')
+        .eq('driver_id', driverId)
+        .order('year', { ascending: true });
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      setScenarios(mockScenarios);
+      if (error) {
+        console.error('Error fetching scenarios:', error);
+        toast.error('Failed to load scenario data');
+        setScenarios([]);
+      } else {
+        // Transform scenarios to match the expected format
+        const transformedScenarios: Scenario[] = [];
+        
+        data?.forEach(row => {
+          if (row.eps_worst && row.price_worst) {
+            transformedScenarios.push({
+              id: `${row.id}_worst`,
+              scenario_type: 'worst',
+              eps_estimate: row.eps_worst,
+              price_target: row.price_worst,
+              probability: 20
+            });
+          }
+          
+          if (row.eps_mid && row.price_mid) {
+            transformedScenarios.push({
+              id: `${row.id}_mid`,
+              scenario_type: 'mid',
+              eps_estimate: row.eps_mid,
+              price_target: row.price_mid,
+              probability: 60
+            });
+          }
+          
+          if (row.eps_best && row.price_best) {
+            transformedScenarios.push({
+              id: `${row.id}_best`,
+              scenario_type: 'best',
+              eps_estimate: row.eps_best,
+              price_target: row.price_best,
+              probability: 20
+            });
+          }
+        });
+        
+        setScenarios(transformedScenarios);
+      }
     } catch (error) {
       console.error('Error fetching scenarios:', error);
+      toast.error('Failed to load scenario data');
       setScenarios([]);
     } finally {
       setLoading(false);

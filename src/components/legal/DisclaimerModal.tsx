@@ -5,13 +5,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LegalText {
-  id: string;
-  title: string;
-  body: string;
-  version: string;
-  effective_date: string;
+  id: number;
+  kind: string;
+  content: string;
+  version: number;
+  is_active: boolean;
+  created_at: string;
 }
 
 interface DisclaimerModalProps {
@@ -36,36 +38,37 @@ export const DisclaimerModal: React.FC<DisclaimerModalProps> = ({ isOpen, onAcce
     try {
       setLoading(true);
       
-      // Mock legal text for demonstration - will be replaced with real Supabase query when tables are available
-      const mockLegalText: LegalText = {
-        id: '1',
-        title: 'AI DayTrader Pro Terms and Disclaimers',
-        body: `IMPORTANT DISCLAIMER: AI DayTrader Pro is for informational purposes only.
+      const { data, error } = await supabase
+        .from('legal_texts')
+        .select('*')
+        .eq('is_active', true)
+        .eq('kind', 'disclaimer')
+        .order('created_at', { ascending: false })
+        .limit(1);
 
-RISK WARNING: Trading stocks involves substantial risk of loss and may not be suitable for all investors.
-
-NOT FINANCIAL ADVICE: The content provided by AI DayTrader Pro, including AI-generated insights, alerts, and analysis, does not constitute financial advice, investment recommendations, or trading signals.
-
-DATA ACCURACY: While we strive for accuracy, we cannot guarantee the completeness or accuracy of market data, AI analysis, or third-party information.
-
-LIMITATION OF LIABILITY: AI DayTrader Pro and its operators shall not be liable for any trading losses, missed opportunities, or damages arising from the use of this platform.
-
-By accepting these terms, you acknowledge that you understand these risks and agree to use AI DayTrader Pro at your own discretion.`,
-        version: '1.0',
-        effective_date: new Date().toISOString().split('T')[0]
-      };
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setLegalText(mockLegalText);
-
-      // Check if user has already accepted this version (mock check)
-      const hasAcceptedKey = `legal_accepted_${user?.id}_${mockLegalText.version}`;
-      const hasAcceptedBefore = localStorage.getItem(hasAcceptedKey);
-      
-      if (hasAcceptedBefore) {
-        onAccept();
+      if (error) {
+        console.error('Error fetching legal text:', error);
+        toast.error('Failed to load legal terms');
         return;
+      }
+
+      if (data && data.length > 0) {
+        setLegalText(data[0]);
+
+        // Check if user has already accepted this version
+        if (user) {
+          const { data: acceptanceData } = await supabase
+            .from('legal_acceptances')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('legal_text_id', data[0].id)
+            .single();
+
+          if (acceptanceData) {
+            onAccept();
+            return;
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching legal text:', error);
@@ -81,12 +84,18 @@ By accepting these terms, you acknowledge that you understand these risks and ag
     try {
       setAccepting(true);
       
-      // Mock acceptance storage - will be replaced with real Supabase call when tables are available
-      const hasAcceptedKey = `legal_accepted_${user.id}_${legalText.version}`;
-      localStorage.setItem(hasAcceptedKey, new Date().toISOString());
+      const { error } = await supabase
+        .from('legal_acceptances')
+        .insert({
+          user_id: user.id,
+          legal_text_id: legalText.id
+        });
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
+      if (error) {
+        console.error('Error accepting legal terms:', error);
+        toast.error('Failed to accept legal terms');
+        return;
+      }
 
       toast.success('Legal terms accepted');
       onAccept();
@@ -118,12 +127,12 @@ By accepting these terms, you acknowledge that you understand these risks and ag
     <Dialog open={isOpen}>
       <DialogContent className="max-w-2xl max-h-[80vh]">
         <DialogHeader>
-          <DialogTitle>{legalText.title}</DialogTitle>
+          <DialogTitle>Legal Terms and Disclaimers</DialogTitle>
         </DialogHeader>
         
         <ScrollArea className="h-96 pr-4">
           <div className="whitespace-pre-wrap text-sm leading-relaxed">
-            {legalText.body}
+            {legalText.content}
           </div>
         </ScrollArea>
 

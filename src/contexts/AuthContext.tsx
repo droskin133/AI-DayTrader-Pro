@@ -7,7 +7,7 @@ interface AuthContextType {
   session: Session | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error: any }>
-  signUp: (email: string, password: string) => Promise<{ error: any }>
+  signUp: (email: string, password: string, username: string) => Promise<{ error: any }>
   signOut: () => Promise<void>
 }
 
@@ -42,6 +42,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Check trial status
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from("profiles")
+        .select("trial_end, role")
+        .eq("id", user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.role === "free" && data.trial_end && new Date(data.trial_end) < new Date()) {
+            window.location.href = "/paywall"
+          }
+        })
+    }
+  }, [user])
+
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -50,17 +66,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return { error }
   }
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, username: string) => {
     const redirectUrl = `${window.location.origin}/`
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl
       }
     })
-    return { error }
+    
+    if (error) return { error }
+    
+    // Set 2-day trial
+    const trialEnd = new Date()
+    trialEnd.setDate(trialEnd.getDate() + 2)
+    
+    // Create profile with trial
+    if (data.user) {
+      const { error: profileError } = await supabase.from("profiles").upsert({
+        id: data.user.id,
+        username,
+        role: "free",
+        trial_end: trialEnd.toISOString(),
+        is_trial_active: true,
+      })
+      
+      if (profileError) return { error: profileError }
+    }
+    
+    return { error: null }
   }
 
   const signOut = async () => {

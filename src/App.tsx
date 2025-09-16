@@ -16,6 +16,8 @@ import Legal from "./pages/Legal";
 import Backtests from "./pages/Backtests";
 import Admin from "./pages/Admin";
 import SignUp from "./pages/SignUp";
+import SignIn from "./pages/SignIn";
+import Paywall from "./pages/Paywall";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +42,8 @@ const App = () => (
                 <Route path="/backtests" element={<Backtests />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/signup" element={<SignUp />} />
+                <Route path="/signin" element={<SignIn />} />
+                <Route path="/paywall" element={<Paywall />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Layout>

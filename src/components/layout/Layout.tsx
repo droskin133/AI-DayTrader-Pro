@@ -35,9 +35,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <p className="text-muted-foreground">
               Please sign in to access your trading dashboard.
             </p>
-            <button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2 px-4 rounded-md transition-colors">
-              Sign In
-            </button>
+            <div className="flex space-x-2">
+              <button 
+                onClick={() => window.location.href = '/signin'}
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground py-2 px-4 rounded-md transition-colors"
+              >
+                Sign In
+              </button>
+              <button 
+                onClick={() => window.location.href = '/signup'}
+                className="flex-1 bg-secondary hover:bg-secondary/90 text-secondary-foreground py-2 px-4 rounded-md transition-colors"
+              >
+                Sign Up
+              </button>
+            </div>
           </div>
         </div>
       </div>

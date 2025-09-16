@@ -976,7 +976,10 @@ export type Database = {
           full_name: string | null
           id: string
           initials: string | null
+          is_trial_active: boolean | null
           role: Database["public"]["Enums"]["user_role_enum"] | null
+          trial_end: string | null
+          username: string | null
         }
         Insert: {
           created_at?: string | null
@@ -984,7 +987,10 @@ export type Database = {
           full_name?: string | null
           id: string
           initials?: string | null
+          is_trial_active?: boolean | null
           role?: Database["public"]["Enums"]["user_role_enum"] | null
+          trial_end?: string | null
+          username?: string | null
         }
         Update: {
           created_at?: string | null
@@ -992,7 +998,10 @@ export type Database = {
           full_name?: string | null
           id?: string
           initials?: string | null
+          is_trial_active?: boolean | null
           role?: Database["public"]["Enums"]["user_role_enum"] | null
+          trial_end?: string | null
+          username?: string | null
         }
         Relationships: []
       }

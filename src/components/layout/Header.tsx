@@ -69,9 +69,14 @@ export const Header: React.FC = () => {
             Backtests
           </Button>
           {!user && (
-            <Button variant="outline" onClick={() => navigate('/signup')}>
-              Sign Up
-            </Button>
+            <>
+              <Button variant="ghost" onClick={() => navigate('/signin')}>
+                Sign In
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/signup')}>
+                Sign Up
+              </Button>
+            </>
           )}
         </nav>
 

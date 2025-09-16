@@ -7,11 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-export default function SignUp() {
-  const { signUp } = useAuth();
+export default function SignIn() {
+  const { signIn } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,14 +21,14 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      const { error } = await signUp(email, password, username);
+      const { error } = await signIn(email, password);
       if (error) {
         setError(error.message);
       } else {
         navigate("/");
       }
     } catch (err: any) {
-      setError(err.message || "An error occurred during sign up");
+      setError(err.message || "An error occurred during sign in");
     } finally {
       setIsLoading(false);
     }
@@ -42,9 +41,9 @@ export default function SignUp() {
           <div className="w-12 h-12 rounded-full trading-gradient flex items-center justify-center mx-auto mb-4">
             <span className="text-lg font-bold text-white">AI</span>
           </div>
-          <CardTitle className="text-2xl">Create Account</CardTitle>
+          <CardTitle className="text-2xl">Welcome Back</CardTitle>
           <CardDescription>
-            Join AI DayTrader Pro to start trading with advanced analytics
+            Sign in to your AI DayTrader Pro account
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -62,27 +61,14 @@ export default function SignUp() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="Choose a username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Choose a password (min 6 characters)"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
                 disabled={isLoading}
               />
             </div>
@@ -92,13 +78,13 @@ export default function SignUp() {
               </Alert>
             )}
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Starting Free Trial..." : "Start Free 2-Day Trial"}
+              {isLoading ? "Signing In..." : "Sign In"}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
-            Already have an account?{" "}
-            <Link to="/signin" className="text-primary hover:underline">
-              Sign in
+            Don't have an account?{" "}
+            <Link to="/signup" className="text-primary hover:underline">
+              Sign up for free trial
             </Link>
           </div>
         </CardContent>

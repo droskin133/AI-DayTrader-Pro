@@ -1515,6 +1515,10 @@ export type Database = {
         Args: { _is_enabled: boolean; _key: string; _value?: Json }
         Returns: undefined
       }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       legal_acceptance: {
         Args: Record<PropertyKey, never>
         Returns: undefined

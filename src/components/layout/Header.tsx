@@ -68,6 +68,11 @@ export const Header: React.FC = () => {
             <BarChart3 className="mr-2 h-4 w-4" />
             Backtests
           </Button>
+          {!user && (
+            <Button variant="outline" onClick={() => navigate('/signup')}>
+              Sign Up
+            </Button>
+          )}
         </nav>
 
         {/* Search */}

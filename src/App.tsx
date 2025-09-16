@@ -15,6 +15,7 @@ import Billing from "./pages/Billing";
 import Legal from "./pages/Legal";
 import Backtests from "./pages/Backtests";
 import Admin from "./pages/Admin";
+import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
                 <Route path="/legal" element={<Legal />} />
                 <Route path="/backtests" element={<Backtests />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/signup" element={<SignUp />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Layout>

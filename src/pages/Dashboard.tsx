@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { AIDeepScanner } from '@/components/ai/AIDeepScanner';
 import { LargestMovers } from '@/components/widgets/LargestMovers';
 import { NewsWidget } from '@/components/widgets/NewsWidget';
@@ -57,7 +57,7 @@ const Dashboard: React.FC = () => {
     }
   }, [user?.id]);
 
-  const handleDragEnd = (result: any) => {
+  const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
     const items = Array.from(widgets);

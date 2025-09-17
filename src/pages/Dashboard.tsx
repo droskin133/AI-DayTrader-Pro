@@ -9,6 +9,11 @@ import { SentimentRadar } from '@/components/ai/SentimentRadar';
 import { AlphaScout } from '@/components/ai/AlphaScout';
 import { BacktestQuickLaunch } from '@/components/backtest/BacktestQuickLaunch';
 import { NotificationsPanel } from '@/components/notifications/NotificationsPanel';
+import { PortfolioTracker } from '@/components/portfolio/PortfolioTracker';
+import { RiskManager } from '@/components/risk/RiskManager';
+import { PerformanceAnalytics } from '@/components/analytics/PerformanceAnalytics';
+import { OptionsFlow } from '@/components/options/OptionsFlow';
+import { InstitutionalData } from '@/components/institutional/InstitutionalData';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Widget {
@@ -19,14 +24,19 @@ interface Widget {
 }
 
 const defaultWidgets: Widget[] = [
-  { id: 'alpha-scout', component: AlphaScout, title: 'Alpha Scout', gridArea: 'a' },
-  { id: 'ai-scanner', component: AIDeepScanner, title: 'AI Deep Scanner', gridArea: 'b' },
-  { id: 'sentiment', component: SentimentRadar, title: 'Sentiment Radar', gridArea: 'c' },
-  { id: 'backtest', component: BacktestQuickLaunch, title: 'Quick Backtest', gridArea: 'd' },
-  { id: 'watchlist', component: WatchlistWidget, title: 'Watchlist', gridArea: 'e' },
-  { id: 'largest-movers', component: LargestMovers, title: 'Largest Movers', gridArea: 'f' },
-  { id: 'news', component: NewsWidget, title: 'In the News', gridArea: 'g' },
-  { id: 'alerts', component: AlertsWidget, title: 'Open Alerts', gridArea: 'h' },
+  { id: 'trader-pro', component: AlphaScout, title: 'Trader Pro', gridArea: 'a' },
+  { id: 'portfolio', component: PortfolioTracker, title: 'Portfolio Tracker', gridArea: 'b' },
+  { id: 'ai-scanner', component: AIDeepScanner, title: 'AI Deep Scanner', gridArea: 'c' },
+  { id: 'sentiment', component: SentimentRadar, title: 'Sentiment Radar', gridArea: 'd' },
+  { id: 'risk-manager', component: RiskManager, title: 'Risk Manager', gridArea: 'e' },
+  { id: 'performance', component: PerformanceAnalytics, title: 'Performance Analytics', gridArea: 'f' },
+  { id: 'options-flow', component: OptionsFlow, title: 'Options Flow', gridArea: 'g' },
+  { id: 'institutional', component: InstitutionalData, title: 'Institutional Data', gridArea: 'h' },
+  { id: 'backtest', component: BacktestQuickLaunch, title: 'Quick Backtest', gridArea: 'i' },
+  { id: 'watchlist', component: WatchlistWidget, title: 'Watchlist', gridArea: 'j' },
+  { id: 'largest-movers', component: LargestMovers, title: 'Largest Movers', gridArea: 'k' },
+  { id: 'news', component: NewsWidget, title: 'In the News', gridArea: 'l' },
+  { id: 'alerts', component: AlertsWidget, title: 'Open Alerts', gridArea: 'm' },
 ];
 
 const Dashboard: React.FC = () => {
@@ -90,9 +100,9 @@ const Dashboard: React.FC = () => {
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
                           className={`${
-                            widget.id === 'alpha-scout' 
+                            widget.id === 'trader-pro' || widget.id === 'portfolio'
                               ? 'lg:col-span-8' 
-                              : widget.id === 'ai-scanner' || widget.id === 'sentiment'
+                              : widget.id === 'ai-scanner' || widget.id === 'sentiment' || widget.id === 'risk-manager' || widget.id === 'performance'
                               ? 'lg:col-span-6'
                               : 'lg:col-span-4'
                           } ${snapshot.isDragging ? 'widget-dragging' : ''}`}

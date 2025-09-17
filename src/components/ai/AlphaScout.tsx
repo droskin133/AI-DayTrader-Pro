@@ -175,7 +175,7 @@ export const AlphaScout: React.FC = () => {
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Zap className="h-5 w-5 text-primary" />
-            <span>Alpha Scout</span>
+            <span>Trader Pro</span>
             <Badge variant="secondary">AI Powered</Badge>
           </div>
           <Button

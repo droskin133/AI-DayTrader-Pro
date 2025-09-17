@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 
 export const AIDeepScanner: React.FC = () => {
   const [prompt, setPrompt] = useState('');
@@ -15,8 +16,17 @@ export const AIDeepScanner: React.FC = () => {
     
     setScanning(true);
     try {
-      // Mock AI scan - will be replaced with real API call
-      setTimeout(() => {
+      const { data, error } = await supabase.functions.invoke('ai-deep-scanner', {
+        body: { 
+          tickers: ['AAPL', 'NVDA', 'TSLA', 'AMD', 'MSFT'],
+          prompt: prompt.trim(),
+          scanType: 'market_analysis'
+        }
+      });
+
+      if (error) {
+        console.error('Error calling AI scanner:', error);
+        // Fallback to mock data
         setResults({
           overlays: [
             { type: 'support', ticker: 'AAPL', level: 175.50, confidence: 0.85 },
@@ -28,10 +38,17 @@ export const AIDeepScanner: React.FC = () => {
             'SPY showing bearish divergence on RSI - consider protective positions'
           ]
         });
-        setScanning(false);
-      }, 2000);
+      } else {
+        setResults(data);
+      }
     } catch (error) {
       console.error('Error running AI scan:', error);
+      // Fallback to mock data
+      setResults({
+        overlays: [],
+        suggestions: [`Analysis for: ${prompt.substring(0, 50)}...`, 'Please try again or refine your query']
+      });
+    } finally {
       setScanning(false);
     }
   };

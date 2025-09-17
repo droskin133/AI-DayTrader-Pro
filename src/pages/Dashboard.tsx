@@ -5,6 +5,9 @@ import { LargestMovers } from '@/components/widgets/LargestMovers';
 import { NewsWidget } from '@/components/widgets/NewsWidget';
 import { WatchlistWidget } from '@/components/widgets/WatchlistWidget';
 import { AlertsWidget } from '@/components/widgets/AlertsWidget';
+import { SentimentRadar } from '@/components/ai/SentimentRadar';
+import { AlphaScout } from '@/components/ai/AlphaScout';
+import { BacktestQuickLaunch } from '@/components/backtest/BacktestQuickLaunch';
 import { NotificationsPanel } from '@/components/notifications/NotificationsPanel';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -16,11 +19,14 @@ interface Widget {
 }
 
 const defaultWidgets: Widget[] = [
-  { id: 'ai-scanner', component: AIDeepScanner, title: 'AI Deep Scanner', gridArea: 'a' },
-  { id: 'largest-movers', component: LargestMovers, title: 'Largest Movers', gridArea: 'b' },
-  { id: 'news', component: NewsWidget, title: 'In the News', gridArea: 'c' },
-  { id: 'watchlist', component: WatchlistWidget, title: 'Watchlist', gridArea: 'd' },
-  { id: 'alerts', component: AlertsWidget, title: 'Open Alerts', gridArea: 'e' },
+  { id: 'alpha-scout', component: AlphaScout, title: 'Alpha Scout', gridArea: 'a' },
+  { id: 'ai-scanner', component: AIDeepScanner, title: 'AI Deep Scanner', gridArea: 'b' },
+  { id: 'sentiment', component: SentimentRadar, title: 'Sentiment Radar', gridArea: 'c' },
+  { id: 'backtest', component: BacktestQuickLaunch, title: 'Quick Backtest', gridArea: 'd' },
+  { id: 'watchlist', component: WatchlistWidget, title: 'Watchlist', gridArea: 'e' },
+  { id: 'largest-movers', component: LargestMovers, title: 'Largest Movers', gridArea: 'f' },
+  { id: 'news', component: NewsWidget, title: 'In the News', gridArea: 'g' },
+  { id: 'alerts', component: AlertsWidget, title: 'Open Alerts', gridArea: 'h' },
 ];
 
 const Dashboard: React.FC = () => {
@@ -84,9 +90,9 @@ const Dashboard: React.FC = () => {
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
                           className={`${
-                            widget.id === 'ai-scanner' 
-                              ? 'lg:col-span-12' 
-                              : widget.id === 'largest-movers' || widget.id === 'news'
+                            widget.id === 'alpha-scout' 
+                              ? 'lg:col-span-8' 
+                              : widget.id === 'ai-scanner' || widget.id === 'sentiment'
                               ? 'lg:col-span-6'
                               : 'lg:col-span-4'
                           } ${snapshot.isDragging ? 'widget-dragging' : ''}`}

@@ -61,6 +61,9 @@ export const Header: React.FC = () => {
 
         {/* Navigation Links */}
         <nav className="hidden md:flex space-x-6">
+          <Button variant="ghost" onClick={() => navigate('/watchlist')}>
+            Watchlist
+          </Button>
           <Button variant="ghost" onClick={() => navigate('/alerts')}>
             Alerts
           </Button>

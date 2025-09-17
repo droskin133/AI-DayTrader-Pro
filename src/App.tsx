@@ -19,6 +19,7 @@ import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import Paywall from "./pages/Paywall";
 import NotFound from "./pages/NotFound";
+import Watchlist from "./pages/Watchlist";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
             <Layout>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/watchlist" element={<Watchlist />} />
                 <Route path="/stock/:ticker" element={<Stock />} />
                 <Route path="/alerts" element={<Alerts />} />
                 <Route path="/news" element={<News />} />

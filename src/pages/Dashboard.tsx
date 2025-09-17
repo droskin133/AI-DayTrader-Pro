@@ -92,6 +92,13 @@ const Dashboard: React.FC = () => {
               >
                 {widgets.map((widget, index) => {
                   const Component = widget.component;
+                  
+                  // Debug: Check if component is undefined
+                  if (!Component) {
+                    console.error(`Component is undefined for widget: ${widget.id}`, widget);
+                    return null;
+                  }
+                  
                   return (
                     <Draggable key={widget.id} draggableId={widget.id} index={index}>
                       {(provided, snapshot) => (

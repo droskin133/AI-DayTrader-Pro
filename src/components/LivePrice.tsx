@@ -35,8 +35,8 @@ export default function LivePrice({ symbol, className = "" }: LivePriceProps) {
 
   const getChangeColor = () => {
     if (prevPrice === null || price === null) return '';
-    if (price > prevPrice) return 'text-green-600';
-    if (price < prevPrice) return 'text-red-600';
+    if (price > prevPrice) return 'text-bull';
+    if (price < prevPrice) return 'text-bear';
     return '';
   };
 

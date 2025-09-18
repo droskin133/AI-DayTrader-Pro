@@ -5,6 +5,7 @@ import { LargestMovers } from '@/components/widgets/LargestMovers';
 import { NewsWidget } from '@/components/widgets/NewsWidget';
 import { WatchlistWidget } from '@/components/widgets/WatchlistWidget';
 import { AlertsWidget } from '@/components/widgets/AlertsWidget';
+import { TickerTape } from '@/components/TickerTape';
 import { SentimentRadar } from '@/components/ai/SentimentRadar';
 import { AlphaScout } from '@/components/ai/AlphaScout';
 import { BacktestQuickLaunch } from '@/components/backtest/BacktestQuickLaunch';
@@ -23,21 +24,30 @@ interface Widget {
   gridArea: string;
 }
 
+// Create a safe widget registry that handles undefined components
+const createSafeWidget = (id: string, component: React.ComponentType | undefined, title: string): Widget | null => {
+  if (!component) {
+    console.warn(`Component is undefined for widget: ${id}`);
+    return null;
+  }
+  return { id, component, title, gridArea: id };
+};
+
 const defaultWidgets: Widget[] = [
-  { id: 'trader-pro', component: AlphaScout, title: 'Trader Pro', gridArea: 'a' },
-  { id: 'portfolio', component: PortfolioTracker, title: 'Portfolio Tracker', gridArea: 'b' },
-  { id: 'ai-scanner', component: AIDeepScanner, title: 'AI Deep Scanner', gridArea: 'c' },
-  { id: 'sentiment', component: SentimentRadar, title: 'Sentiment Radar', gridArea: 'd' },
-  { id: 'risk-manager', component: RiskManager, title: 'Risk Manager', gridArea: 'e' },
-  { id: 'performance', component: PerformanceAnalytics, title: 'Performance Analytics', gridArea: 'f' },
-  { id: 'options-flow', component: OptionsFlow, title: 'Options Flow', gridArea: 'g' },
-  { id: 'institutional', component: InstitutionalData, title: 'Institutional Data', gridArea: 'h' },
-  { id: 'backtest', component: BacktestQuickLaunch, title: 'Quick Backtest', gridArea: 'i' },
-  { id: 'watchlist', component: WatchlistWidget, title: 'Watchlist', gridArea: 'j' },
-  { id: 'largest-movers', component: LargestMovers, title: 'Largest Movers', gridArea: 'k' },
-  { id: 'news', component: NewsWidget, title: 'In the News', gridArea: 'l' },
-  { id: 'alerts', component: AlertsWidget, title: 'Open Alerts', gridArea: 'm' },
-];
+  createSafeWidget('trader-pro', AlphaScout, 'Trader Pro'),
+  createSafeWidget('portfolio', PortfolioTracker, 'Portfolio Tracker'),
+  createSafeWidget('ai-scanner', AIDeepScanner, 'AI Deep Scanner'),
+  createSafeWidget('sentiment', SentimentRadar, 'Sentiment Radar'),
+  createSafeWidget('risk-manager', RiskManager, 'Risk Manager'),
+  createSafeWidget('performance', PerformanceAnalytics, 'Performance Analytics'),
+  createSafeWidget('options-flow', OptionsFlow, 'Options Flow'),
+  createSafeWidget('institutional', InstitutionalData, 'Institutional Data'),
+  createSafeWidget('backtest', BacktestQuickLaunch, 'Quick Backtest'),
+  createSafeWidget('watchlist', WatchlistWidget, 'Watchlist'),
+  createSafeWidget('largest-movers', LargestMovers, 'Largest Movers'),
+  createSafeWidget('news', NewsWidget, 'In the News'),
+  createSafeWidget('alerts', AlertsWidget, 'Open Alerts'),
+].filter((widget): widget is Widget => widget !== null);
 
 const Dashboard: React.FC = () => {
   const [widgets, setWidgets] = useState<Widget[]>(defaultWidgets);
@@ -82,6 +92,11 @@ const Dashboard: React.FC = () => {
           </p>
         </div>
 
+        {/* Live Ticker Tape */}
+        <div className="mb-6">
+          <TickerTape />
+        </div>
+
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="dashboard" direction="vertical">
             {(provided) => (
@@ -92,12 +107,6 @@ const Dashboard: React.FC = () => {
               >
                 {widgets.map((widget, index) => {
                   const Component = widget.component;
-                  
-                  // Debug: Check if component is undefined
-                  if (!Component) {
-                    console.error(`Component is undefined for widget: ${widget.id}`, widget);
-                    return null;
-                  }
                   
                   return (
                     <Draggable key={widget.id} draggableId={widget.id} index={index}>

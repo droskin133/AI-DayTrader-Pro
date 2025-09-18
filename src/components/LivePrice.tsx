@@ -25,13 +25,13 @@ export default function LivePrice({ symbol, className = "" }: LivePriceProps) {
     };
 
     getPrice();
-    const interval = setInterval(getPrice, 1000); // Update every 1 second
+    const interval = setInterval(getPrice, 5000); // Update every 5 seconds
     
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [symbol, price]);
+  }, [symbol]); // Removed price dependency to prevent infinite re-renders
 
   const getChangeColor = () => {
     if (prevPrice === null || price === null) return '';

@@ -4,6 +4,8 @@ import { Star, StarOff, TrendingUp, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import LivePrice from '@/components/LivePrice';
+import { fetchLivePrice } from '@/lib/fetchLivePrice';
 import { StockChart } from '@/components/charts/StockChart';
 import { AIStockAnalysis } from '@/components/ai/AIStockAnalysis';
 import { StockNews } from '@/components/stock/StockNews';
@@ -20,6 +22,7 @@ const Stock: React.FC = () => {
   const [stockData, setStockData] = useState<any>(null);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [livePrice, setLivePrice] = useState<number | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -32,19 +35,24 @@ const Stock: React.FC = () => {
   const fetchStockData = async (symbol: string) => {
     try {
       setLoading(true);
-      // Mock data for now - will be replaced with real API calls
+      
+      // Fetch live price from Finnhub
+      const price = await fetchLivePrice(symbol);
+      setLivePrice(price);
+      
+      // Set basic stock data with live price
       setStockData({
         symbol: symbol,
-        price: 175.43,
-        change: 2.34,
-        changePercent: 1.35,
-        volume: 45234567,
+        price: price || 0,
+        change: (Math.random() - 0.5) * 10, // Mock change data for now
+        changePercent: (Math.random() - 0.5) * 5,
+        volume: Math.floor(Math.random() * 50000000),
         marketCap: '2.8T',
         pe: 28.5,
-        dayHigh: 176.89,
-        dayLow: 173.21,
-        yearHigh: 198.23,
-        yearLow: 142.56
+        dayHigh: (price || 175) * 1.02,
+        dayLow: (price || 175) * 0.98,
+        yearHigh: (price || 175) * 1.4,
+        yearLow: (price || 175) * 0.7
       });
     } catch (error) {
       console.error('Error fetching stock data:', error);
@@ -75,29 +83,12 @@ const Stock: React.FC = () => {
     if (!ticker || !user) return;
     
     try {
-      if (isInWatchlist) {
-        // Remove from watchlist
-        const { error } = await supabase
-          .from('watchlist')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('ticker', ticker);
-        
-        if (!error) {
-          setIsInWatchlist(false);
-        }
-      } else {
-        // Add to watchlist
-        const { error } = await supabase
-          .from('watchlist')
-          .insert({
-            user_id: user.id,
-            ticker: ticker
-          });
-        
-        if (!error) {
-          setIsInWatchlist(true);
-        }
+      const { error } = await supabase.rpc('toggle_watchlist', {
+        ticker: ticker
+      });
+      
+      if (!error) {
+        setIsInWatchlist(!isInWatchlist);
       }
     } catch (error) {
       console.error('Error updating watchlist:', error);
@@ -154,21 +145,7 @@ const Stock: React.FC = () => {
           </div>
           
           <div className="flex items-center space-x-6">
-            <div className="flex items-center space-x-2">
-              <span className="text-4xl font-bold">
-                ${stockData.price.toFixed(2)}
-              </span>
-              <div className={`flex items-center space-x-1 ${isPositive ? 'text-bull' : 'text-bear'}`}>
-                {isPositive ? (
-                  <TrendingUp className="h-4 w-4" />
-                ) : (
-                  <TrendingDown className="h-4 w-4" />
-                )}
-                <span className="font-semibold">
-                  {isPositive ? '+' : ''}{stockData.change.toFixed(2)} ({isPositive ? '+' : ''}{stockData.changePercent.toFixed(2)}%)
-                </span>
-              </div>
-            </div>
+            <LivePrice symbol={ticker!} className="text-4xl font-bold" />
           </div>
         </div>
 

@@ -24,21 +24,22 @@ export function TickerTape() {
     fetchWatchlist();
   }, [user]);
 
-  if (watchlistSymbols.length === 0) {
-    return (
-      <div className="bg-card border rounded-lg p-4 text-center text-muted-foreground">
-        Add stocks to your watchlist to see live prices here
-      </div>
-    );
-  }
+  // Default popular stocks when watchlist is empty
+  const defaultStocks = ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN', 'NVDA'];
+  const displaySymbols = watchlistSymbols.length > 0 ? watchlistSymbols : defaultStocks;
 
   return (
     <div className="bg-card border rounded-lg p-4 overflow-hidden">
       <div className="flex gap-6 animate-scroll">
-        {watchlistSymbols.map((symbol) => (
+        {displaySymbols.map((symbol) => (
           <LivePrice key={symbol} symbol={symbol} className="whitespace-nowrap" />
         ))}
       </div>
+      {watchlistSymbols.length === 0 && (
+        <div className="text-center text-muted-foreground text-sm mt-2">
+          Popular stocks • Add stocks to your watchlist to see your tracked symbols
+        </div>
+      )}
     </div>
   );
 }

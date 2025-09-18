@@ -25,7 +25,7 @@ export default function LivePrice({ symbol, className = "" }: LivePriceProps) {
     };
 
     getPrice();
-    const interval = setInterval(getPrice, 5000); // Update every 5 seconds
+    const interval = setInterval(getPrice, 1000); // Update every 1 second
     
     return () => {
       isMounted = false;

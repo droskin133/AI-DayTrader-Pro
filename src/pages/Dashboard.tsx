@@ -5,7 +5,7 @@ import { LargestMovers } from '@/components/widgets/LargestMovers';
 import { NewsWidget } from '@/components/widgets/NewsWidget';
 import { WatchlistWidget } from '@/components/widgets/WatchlistWidget';
 import { AlertsWidget } from '@/components/widgets/AlertsWidget';
-import { TickerTape } from '@/components/TickerTape';
+import { TickerTape } from '@/components/stock/TickerTape';
 import { SentimentRadar } from '@/components/ai/SentimentRadar';
 import { AlphaScout } from '@/components/ai/AlphaScout';
 import { BacktestQuickLaunch } from '@/components/backtest/BacktestQuickLaunch';

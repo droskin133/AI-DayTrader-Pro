@@ -91,8 +91,8 @@ const Watchlist: React.FC = () => {
     }
 
     try {
-      const { error } = await supabase.functions.invoke('toggle-watchlist', {
-        body: { ticker }
+      const { error } = await supabase.rpc('toggle_watchlist', {
+        ticker: ticker
       });
 
       if (error) throw error;
@@ -110,8 +110,8 @@ const Watchlist: React.FC = () => {
     if (!user) return;
 
     try {
-      const { error } = await supabase.functions.invoke('toggle-watchlist', {
-        body: { ticker }
+      const { error } = await supabase.rpc('toggle_watchlist', {
+        ticker: ticker
       });
 
       if (error) throw error;

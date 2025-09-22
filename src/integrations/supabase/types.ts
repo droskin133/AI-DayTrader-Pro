@@ -509,6 +509,39 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          function_name: string
+          id: string
+          latency_ms: number | null
+          payload_hash: string | null
+          request_id: string | null
+          upstream_status: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          function_name: string
+          id?: string
+          latency_ms?: number | null
+          payload_hash?: string | null
+          request_id?: string | null
+          upstream_status?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          function_name?: string
+          id?: string
+          latency_ms?: number | null
+          payload_hash?: string | null
+          request_id?: string | null
+          upstream_status?: number | null
+        }
+        Relationships: []
+      }
       backtest_results: {
         Row: {
           backtest_id: string
@@ -865,6 +898,33 @@ export type Database = {
         }
         Relationships: []
       }
+      institutional_trades: {
+        Row: {
+          created_at: string | null
+          data: Json
+          id: string
+          reported_at: string | null
+          source: string
+          symbol: string
+        }
+        Insert: {
+          created_at?: string | null
+          data: Json
+          id?: string
+          reported_at?: string | null
+          source: string
+          symbol: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json
+          id?: string
+          reported_at?: string | null
+          source?: string
+          symbol?: string
+        }
+        Relationships: []
+      }
       legal_acceptances: {
         Row: {
           accepted_at: string | null
@@ -945,6 +1005,39 @@ export type Database = {
           kind?: string
           score?: number | null
           ticker?: string
+        }
+        Relationships: []
+      }
+      news_cache: {
+        Row: {
+          created_at: string | null
+          headline: string | null
+          id: string
+          published_at: string | null
+          raw: Json | null
+          sentiment: number | null
+          symbol: string | null
+          url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          headline?: string | null
+          id: string
+          published_at?: string | null
+          raw?: Json | null
+          sentiment?: number | null
+          symbol?: string | null
+          url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          headline?: string | null
+          id?: string
+          published_at?: string | null
+          raw?: Json | null
+          sentiment?: number | null
+          symbol?: string | null
+          url?: string | null
         }
         Relationships: []
       }
@@ -1574,18 +1667,21 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          sort_order: number | null
           ticker: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          sort_order?: number | null
           ticker: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          sort_order?: number | null
           ticker?: string
           user_id?: string
         }

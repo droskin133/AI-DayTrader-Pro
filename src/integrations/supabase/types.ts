@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_auto_flags: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          explanation: string | null
+          id: string
+          metadata: Json | null
+          risk_score: number | null
+          symbol: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          explanation?: string | null
+          id?: string
+          metadata?: Json | null
+          risk_score?: number | null
+          symbol: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          explanation?: string | null
+          id?: string
+          metadata?: Json | null
+          risk_score?: number | null
+          symbol?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      ai_auto_generated_alerts: {
+        Row: {
+          alert_text: string
+          created_at: string | null
+          id: string
+          status: string | null
+          symbol: string
+          trigger_context: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          alert_text: string
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          symbol: string
+          trigger_context?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          alert_text?: string
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          symbol?: string
+          trigger_context?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       ai_autoscan_results: {
         Row: {
           alert_json: Json | null
@@ -1148,6 +1211,42 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_price_ticks: {
+        Row: {
+          close: number | null
+          created_at: string | null
+          high: number | null
+          id: string
+          low: number | null
+          open: number | null
+          symbol: string
+          timestamp: string
+          volume: number | null
+        }
+        Insert: {
+          close?: number | null
+          created_at?: string | null
+          high?: number | null
+          id?: string
+          low?: number | null
+          open?: number | null
+          symbol: string
+          timestamp: string
+          volume?: number | null
+        }
+        Update: {
+          close?: number | null
+          created_at?: string | null
+          high?: number | null
+          id?: string
+          low?: number | null
+          open?: number | null
+          symbol?: string
+          timestamp?: string
+          volume?: number | null
+        }
+        Relationships: []
+      }
       stocks: {
         Row: {
           company_name: string | null
@@ -1217,6 +1316,128 @@ export type Database = {
           key?: string
           updated_at?: string | null
           value?: string | null
+        }
+        Relationships: []
+      }
+      user_ai_profiles: {
+        Row: {
+          ai_opinion: string | null
+          alert_style: string | null
+          notes: string | null
+          preferred_sector: string | null
+          profile_embedding: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_opinion?: string | null
+          alert_style?: string | null
+          notes?: string | null
+          preferred_sector?: string | null
+          profile_embedding?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_opinion?: string | null
+          alert_style?: string | null
+          notes?: string | null
+          preferred_sector?: string | null
+          profile_embedding?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_alert_audit_log: {
+        Row: {
+          alert_id: string | null
+          event_json: Json | null
+          fired_at: string | null
+          id: string
+          symbol: string | null
+          user_id: string | null
+        }
+        Insert: {
+          alert_id?: string | null
+          event_json?: Json | null
+          fired_at?: string | null
+          id?: string
+          symbol?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          alert_id?: string | null
+          event_json?: Json | null
+          fired_at?: string | null
+          id?: string
+          symbol?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_alert_audit_log_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "user_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_alerts: {
+        Row: {
+          active: boolean | null
+          alert_type: string | null
+          condition_text: string | null
+          created_at: string | null
+          id: string
+          symbol: string
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          alert_type?: string | null
+          condition_text?: string | null
+          created_at?: string | null
+          id?: string
+          symbol: string
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          alert_type?: string | null
+          condition_text?: string | null
+          created_at?: string | null
+          id?: string
+          symbol?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_event_log: {
+        Row: {
+          event_type: string
+          id: string
+          metadata: Json | null
+          symbol: string | null
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          symbol?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          symbol?: string | null
+          timestamp?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

@@ -1,1 +1,19 @@
 project_id = "xijfxrfemhdnxwzggpcp"
+
+[functions.finnhub-data]
+verify_jwt = false
+
+[functions.institutional]
+verify_jwt = false
+
+[functions.news]
+verify_jwt = false
+
+[functions.ai-analysis]
+verify_jwt = false
+
+[functions.alerts]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false

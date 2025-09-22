@@ -95,51 +95,77 @@ serve(async (req) => {
       }
     }
 
-    // If no real data, provide mock data
+    // Try additional API sources if Quiver didn't provide enough data
     if (sec_insider_trades.length === 0) {
-      sec_insider_trades = [
-        {
-          filer: "CEO",
-          type: "BUY",
-          shares: 10000,
-          price: 120.5,
-          filed_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          filer: "CFO", 
-          type: "SELL",
-          shares: 5000,
-          price: 118.2,
-          filed_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+      // Try SEC Edgar API as fallback
+      try {
+        const secUrl = `https://data.sec.gov/api/xbrl/companyfacts/CIK${symbol}.json`;
+        const secResponse = await fetch(secUrl, {
+          headers: { 
+            'User-Agent': 'DayTrader-Pro contact@daytrader.com',
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (secResponse.ok) {
+          // SEC data processing would go here
+          // For now, we'll use database cache
         }
-      ];
+      } catch (secError) {
+        console.log('SEC API error:', secError.message);
+      }
+    }
+
+    // Fallback to database cache if no API data available
+    if (sec_insider_trades.length === 0) {
+      const { data: cachedInsider } = await supabase
+        .from('institutional_trades')
+        .select('data')
+        .eq('symbol', symbol)
+        .eq('source', 'sec')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+        
+      if (cachedInsider?.data?.sec_insider_trades) {
+        sec_insider_trades = cachedInsider.data.sec_insider_trades.slice(0, 5);
+        sources.push('sec_cache');
+      }
     }
 
     if (hedge_fund_positions.length === 0) {
-      hedge_fund_positions = [
-        {
-          fund: "Vanguard Group",
-          position_delta: 250000,
-          reported_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          fund: "BlackRock",
-          position_delta: -100000,
-          reported_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString()
-        }
-      ];
-      sources.push('whalewisdom');
+      const { data: cachedHedge } = await supabase
+        .from('institutional_trades')
+        .select('data')
+        .eq('symbol', symbol)
+        .eq('source', 'whalewisdom')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+        
+      if (cachedHedge?.data?.hedge_fund_positions) {
+        hedge_fund_positions = cachedHedge.data.hedge_fund_positions.slice(0, 5);
+        sources.push('whalewisdom_cache');
+      }
     }
 
     if (congressional_trades.length === 0) {
-      congressional_trades = [
-        {
-          member: "Rep. Smith",
-          type: "BUY",
-          amount: "$50k-$100k",
-          disclosed_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
-        }
-      ];
+      const { data: cachedCongress } = await supabase
+        .from('congress_trades')
+        .select('*')
+        .eq('ticker', symbol)
+        .order('reported_date', { ascending: false })
+        .limit(5);
+        
+      if (cachedCongress && cachedCongress.length > 0) {
+        congressional_trades = cachedCongress.map(trade => ({
+          member: trade.person || 'Unknown',
+          type: trade.transaction_type?.toUpperCase() || 'UNKNOWN',
+          amount: trade.amount_range || 'Unknown',
+          disclosed_at: trade.reported_date || new Date().toISOString()
+        }));
+        sources.push('congress_cache');
+      }
     }
 
     const result = {

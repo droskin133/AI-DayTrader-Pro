@@ -4,6 +4,7 @@ import { Star, StarOff, TrendingUp, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import LivePrice from '@/components/LivePrice';
 import { fetchLivePrice } from '@/lib/fetchLivePrice';
 import { StockChart } from '@/components/charts/StockChart';
@@ -23,14 +24,37 @@ const Stock: React.FC = () => {
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [loading, setLoading] = useState(true);
   const [livePrice, setLivePrice] = useState<number | null>(null);
+  const [autoAiRunning, setAutoAiRunning] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
     if (ticker) {
       fetchStockData(ticker);
       checkWatchlistStatus(ticker);
+      runAutoAiAnalysis(ticker);
     }
   }, [ticker]);
+
+  const runAutoAiAnalysis = async (symbol: string) => {
+    setAutoAiRunning(true);
+    try {
+      // Auto-run AI analysis for the stock
+      await supabase.functions.invoke('ai-analysis', {
+        body: {
+          mode: 'chart',
+          symbol,
+          payload: {
+            interval: '1m',
+            candles: [] // Will be filled by the AI function
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Auto AI analysis failed:', error);
+    } finally {
+      setAutoAiRunning(false);
+    }
+  };
 
   const fetchStockData = async (symbol: string) => {
     try {
@@ -40,20 +64,25 @@ const Stock: React.FC = () => {
       const price = await fetchLivePrice(symbol);
       setLivePrice(price);
       
-      // Set basic stock data with live price
-      setStockData({
-        symbol: symbol,
-        price: price || 0,
-        change: (Math.random() - 0.5) * 10, // Mock change data for now
-        changePercent: (Math.random() - 0.5) * 5,
-        volume: Math.floor(Math.random() * 50000000),
-        marketCap: '2.8T',
-        pe: 28.5,
-        dayHigh: (price || 175) * 1.02,
-        dayLow: (price || 175) * 0.98,
-        yearHigh: (price || 175) * 1.4,
-        yearLow: (price || 175) * 0.7
-      });
+      if (price) {
+        // Calculate realistic market data based on live price
+        const change = (price * 0.98) - price; // Mock 2% down for demo
+        const changePercent = (change / price) * 100;
+        
+        setStockData({
+          symbol: symbol,
+          price: price,
+          change: change,
+          changePercent: changePercent,
+          volume: Math.floor(Math.random() * 50000000),
+          marketCap: price > 200 ? '2.8T' : price > 100 ? '1.2T' : '500B',
+          pe: 28.5,
+          dayHigh: price * 1.02,
+          dayLow: price * 0.98,
+          yearHigh: price * 1.4,
+          yearLow: price * 0.7
+        });
+      }
     } catch (error) {
       console.error('Error fetching stock data:', error);
     } finally {
@@ -144,9 +173,15 @@ const Stock: React.FC = () => {
             </Badge>
           </div>
           
-          <div className="flex items-center space-x-6">
-            <LivePrice symbol={ticker!} className="text-4xl font-bold" />
-          </div>
+            <div className="flex items-center space-x-6">
+              <LivePrice symbol={ticker!} className="text-4xl font-bold" />
+              {autoAiRunning && (
+                <div className="flex items-center space-x-2 text-muted-foreground">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  <span className="text-sm">AI analyzing...</span>
+                </div>
+              )}
+            </div>
         </div>
 
         {/* Main Content */}
@@ -161,24 +196,35 @@ const Stock: React.FC = () => {
                 <CardTitle>Market Data</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Volume</p>
-                    <p className="font-semibold">{stockData.volume.toLocaleString()}</p>
+                {loading ? (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i}>
+                        <Skeleton className="h-4 w-16 mb-1" />
+                        <Skeleton className="h-5 w-20" />
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Market Cap</p>
-                    <p className="font-semibold">{stockData.marketCap}</p>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Volume</p>
+                      <p className="font-semibold">{stockData.volume.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Market Cap</p>
+                      <p className="font-semibold">{stockData.marketCap}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">P/E Ratio</p>
+                      <p className="font-semibold">{stockData.pe}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">52W Range</p>
+                      <p className="font-semibold">${stockData.yearLow?.toFixed(2)} - ${stockData.yearHigh?.toFixed(2)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">P/E Ratio</p>
-                    <p className="font-semibold">{stockData.pe}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">52W Range</p>
-                    <p className="font-semibold">${stockData.yearLow} - ${stockData.yearHigh}</p>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>

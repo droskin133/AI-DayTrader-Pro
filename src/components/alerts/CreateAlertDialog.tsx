@@ -13,6 +13,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface CreateAlertDialogProps {
   open: boolean;
@@ -29,27 +32,71 @@ export const CreateAlertDialog: React.FC<CreateAlertDialogProps> = ({ open, onOp
   });
 
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create alerts",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!alertData.ticker || !alertData.condition) {
+      toast({
+        title: "Error", 
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     
     try {
-      // Mock alert creation - will be replaced with real API call
-      console.log('Creating alert:', alertData);
-      setTimeout(() => {
-        setLoading(false);
-        onOpenChange(false);
-        setAlertData({
-          ticker: '',
-          condition: '',
-          description: '',
-          expiry: 'end-of-day',
-          aiSuggestions: true
-        });
-      }, 1000);
+      const { data, error } = await supabase.functions.invoke('alerts', {
+        body: {
+          user_id: user.id,
+          ticker: alertData.ticker.toUpperCase(),
+          condition: alertData.condition,
+          notify: {
+            in_app: true,
+            discord: false
+          }
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Alert Created",
+        description: `Alert for ${alertData.ticker.toUpperCase()} has been created successfully`,
+      });
+      
+      onOpenChange(false);
+      setAlertData({
+        ticker: '',
+        condition: '',
+        description: '',
+        expiry: 'end-of-day',
+        aiSuggestions: true
+      });
+      
     } catch (error) {
       console.error('Error creating alert:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create alert. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setLoading(false);
     }
   };

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Newspaper, ExternalLink, Clock, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Newspaper, ExternalLink, Clock, RefreshCw, Brain } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StockNewsProps {
   ticker?: string;
@@ -10,77 +11,108 @@ interface StockNewsProps {
 
 interface NewsItem {
   id: string;
-  title: string;
+  headline: string;
   summary: string;
   source: string;
-  publishedAt: string;
-  sentiment: 'positive' | 'negative' | 'neutral';
+  published_at: string;
+  sentiment: number;
   url: string;
+  aiAnalysis?: {
+    summary: string;
+    rationale: string[];
+    tags: string[];
+    confidence: number;
+  };
 }
 
 export const StockNews: React.FC<StockNewsProps> = ({ ticker = 'AAPL' }) => {
   const [loading, setLoading] = useState(false);
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [aiLoading, setAiLoading] = useState<{ [key: string]: boolean }>({});
 
-  // Mock news data specific to the ticker
-  const newsItems: NewsItem[] = [
-    {
-      id: '1',
-      title: `${ticker} Reports Strong Q4 Earnings, Beats Revenue Expectations`,
-      summary: 'Company delivered better-than-expected quarterly results driven by strong product sales and services growth.',
-      source: 'Bloomberg',
-      publishedAt: '2024-01-15T09:15:00Z',
-      sentiment: 'positive',
-      url: '#'
-    },
-    {
-      id: '2',
-      title: `Analyst Upgrades ${ticker} Price Target Following AI Developments`,
-      summary: 'Wall Street analysts raise price targets citing strong positioning in artificial intelligence market.',
-      source: 'CNBC',
-      publishedAt: '2024-01-15T08:30:00Z',
-      sentiment: 'positive',
-      url: '#'
-    },
-    {
-      id: '3',
-      title: `${ticker} Announces New Product Launch at Developer Conference`,
-      summary: 'Company unveils next-generation products with enhanced features and improved performance metrics.',
-      source: 'Reuters',
-      publishedAt: '2024-01-15T07:45:00Z',
-      sentiment: 'positive',
-      url: '#'
-    },
-    {
-      id: '4',
-      title: `Supply Chain Concerns May Impact ${ticker} Q1 Guidance`,
-      summary: 'Industry experts warn of potential supply chain disruptions affecting production targets.',
-      source: 'MarketWatch',
-      publishedAt: '2024-01-15T06:20:00Z',
-      sentiment: 'negative',
-      url: '#'
+  useEffect(() => {
+    if (ticker) {
+      fetchNews();
     }
-  ];
+  }, [ticker]);
+
+  const fetchNews = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('news', {
+        body: { symbol: ticker }
+      });
+
+      if (error) {
+        console.error('Error fetching news:', error);
+        return;
+      }
+
+      if (data?.items) {
+        setNewsItems(data.items);
+      }
+    } catch (error) {
+      console.error('Failed to fetch news:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const explainNews = async (newsItem: NewsItem) => {
+    setAiLoading(prev => ({ ...prev, [newsItem.id]: true }));
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-analysis', {
+        body: {
+          mode: 'news',
+          symbol: ticker,
+          payload: {
+            headline: newsItem.headline,
+            summary: newsItem.summary,
+            published_at: newsItem.published_at
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Error getting AI analysis:', error);
+        return;
+      }
+
+      if (data) {
+        setNewsItems(prev => prev.map(item => 
+          item.id === newsItem.id 
+            ? { ...item, aiAnalysis: data }
+            : item
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to get AI analysis:', error);
+    } finally {
+      setAiLoading(prev => ({ ...prev, [newsItem.id]: false }));
+    }
+  };
 
   const refreshNews = async () => {
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => setLoading(false), 1000);
+    await fetchNews();
   };
 
-  const getSentimentColor = (sentiment: string) => {
-    switch (sentiment) {
-      case 'positive': return 'text-bull';
-      case 'negative': return 'text-bear';
-      default: return 'text-neutral';
-    }
+  const getSentimentColor = (sentiment: number) => {
+    if (sentiment > 0.1) return 'text-bull';
+    if (sentiment < -0.1) return 'text-bear';
+    return 'text-neutral';
   };
 
-  const getSentimentBadge = (sentiment: string) => {
-    switch (sentiment) {
-      case 'positive': return 'default';
-      case 'negative': return 'destructive';
-      default: return 'secondary';
-    }
+  const getSentimentBadge = (sentiment: number) => {
+    if (sentiment > 0.1) return 'default';
+    if (sentiment < -0.1) return 'destructive';
+    return 'secondary';
+  };
+
+  const getSentimentLabel = (sentiment: number) => {
+    if (sentiment > 0.1) return 'positive';
+    if (sentiment < -0.1) return 'negative';
+    return 'neutral';
   };
 
   const formatTime = (dateString: string) => {
@@ -123,28 +155,70 @@ export const StockNews: React.FC<StockNewsProps> = ({ ticker = 'AAPL' }) => {
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center space-x-2">
                   <Badge variant={getSentimentBadge(item.sentiment)} className="text-xs">
-                    {item.sentiment}
+                    {getSentimentLabel(item.sentiment)}
                   </Badge>
                   <span className="text-xs text-muted-foreground">{item.source}</span>
                 </div>
-                <Button variant="ghost" size="sm" asChild className="h-auto p-1">
-                  <a href={item.url} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                </Button>
+                <div className="flex space-x-1">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => explainNews(item)}
+                    disabled={aiLoading[item.id]}
+                    className="h-auto p-1"
+                    title="What does this mean?"
+                  >
+                    <Brain className={`h-3 w-3 ${aiLoading[item.id] ? 'animate-spin' : ''}`} />
+                  </Button>
+                  <Button variant="ghost" size="sm" asChild className="h-auto p-1">
+                    <a href={item.url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </Button>
+                </div>
               </div>
               
               <h4 className="text-sm font-medium mb-2 line-clamp-2">
-                {item.title}
+                {item.headline}
               </h4>
               
               <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
                 {item.summary}
               </p>
               
+              {item.aiAnalysis && (
+                <div className="mt-3 p-2 bg-muted rounded border-l-2 border-primary">
+                  <div className="flex items-center mb-1">
+                    <Brain className="h-3 w-3 mr-1" />
+                    <span className="text-xs font-medium">AI Analysis</span>
+                    <Badge variant="outline" className="ml-2 text-xs">
+                      {Math.round(item.aiAnalysis.confidence * 100)}%
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    {item.aiAnalysis.summary}
+                  </p>
+                  <ul className="text-xs space-y-1">
+                    {item.aiAnalysis.rationale.map((point, idx) => (
+                      <li key={idx} className="flex items-start">
+                        <span className="mr-1">•</span>
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {item.aiAnalysis.tags.map((tag, idx) => (
+                      <Badge key={idx} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               <div className="flex items-center text-xs text-muted-foreground">
                 <Clock className="h-3 w-3 mr-1" />
-                {formatTime(item.publishedAt)}
+                {formatTime(item.published_at)}
               </div>
             </div>
           ))}

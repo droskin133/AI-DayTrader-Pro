@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles, TrendingUp, Target, BarChart3, Brain } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AIStockAnalysisProps {
   ticker?: string;
@@ -12,6 +13,13 @@ interface AIStockAnalysisProps {
 export const AIStockAnalysis: React.FC<AIStockAnalysisProps> = ({ ticker = 'AAPL' }) => {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<any>(null);
+
+  // Auto-run analysis on component mount
+  useEffect(() => {
+    if (ticker) {
+      runAnalysis();
+    }
+  }, [ticker]);
 
   // Mock AI analysis data
   const mockAnalysis = {
@@ -39,11 +47,36 @@ export const AIStockAnalysis: React.FC<AIStockAnalysisProps> = ({ ticker = 'AAPL
   const runAnalysis = async () => {
     setAnalyzing(true);
     
-    // Simulate AI analysis
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-analysis', {
+        body: { 
+          mode: 'chart',
+          symbol: ticker,
+          payload: {
+            current_price: mockAnalysis.currentPrice,
+            timestamp: new Date().toISOString()
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data) {
+        setAnalysis({
+          ...mockAnalysis,
+          recommendation: data.confidence > 0.7 ? 'BUY' : data.confidence < 0.3 ? 'SELL' : 'HOLD',
+          confidence: Math.round(data.confidence * 100),
+          keyFactors: data.rationale || mockAnalysis.keyFactors
+        });
+      } else {
+        setAnalysis(mockAnalysis);
+      }
+    } catch (error) {
+      console.error('AI analysis error:', error);
       setAnalysis(mockAnalysis);
+    } finally {
       setAnalyzing(false);
-    }, 2000);
+    }
   };
 
   const createAlertFromAnalysis = () => {

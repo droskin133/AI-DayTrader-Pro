@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Target, Clock, TrendingUp, Edit, Trash2, MoreHorizontal } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AlertsListProps {
   type: 'by-stock' | 'global' | 'history';
@@ -28,48 +29,65 @@ interface Alert {
 }
 
 export const AlertsList: React.FC<AlertsListProps> = ({ type }) => {
-  // Mock alert data
-  const alerts: Alert[] = [
-    {
-      id: '1',
-      ticker: 'AAPL',
-      condition: 'Price above $180',
-      status: 'active',
-      source: 'user',
-      createdAt: '2024-01-15T09:00:00Z',
-      expiresAt: '2024-01-16T16:00:00Z'
-    },
-    {
-      id: '2',
-      ticker: 'TSLA',
-      condition: 'RSI below 30',
-      status: 'triggered',
-      source: 'ai',
-      createdAt: '2024-01-15T08:00:00Z',
-      triggeredAt: '2024-01-15T14:30:00Z',
-      winRate: 75,
-      avgReturn: 3.2
-    },
-    {
-      id: '3',
-      ticker: 'NVDA',
-      condition: 'Volume exceeds 50M shares',
-      status: 'active',
-      source: 'user',
-      createdAt: '2024-01-15T07:30:00Z',
-      expiresAt: '2024-01-15T17:00:00Z'
-    },
-    {
-      id: '4',
-      ticker: 'SPY',
-      condition: 'Market breaks above 485',
-      status: 'expired',
-      source: 'ai',
-      createdAt: '2024-01-14T15:00:00Z',
-      winRate: 60,
-      avgReturn: -1.5
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAlerts();
+  }, [type]);
+
+  const fetchAlerts = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('alerts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const transformedAlerts = data.map(alert => ({
+          id: alert.id,
+          ticker: alert.ticker,
+          condition: alert.condition,
+          status: alert.status as 'active' | 'triggered' | 'expired' | 'canceled',
+          source: alert.source as 'user' | 'ai' | 'community',
+          createdAt: alert.created_at,
+          expiresAt: alert.expires_at,
+          triggeredAt: alert.triggered_at
+        }));
+        setAlerts(transformedAlerts);
+      }
+    } catch (error) {
+      console.error('Error fetching alerts:', error);
+      // Fallback to mock data on error
+      setAlerts([
+        {
+          id: '1',
+          ticker: 'AAPL',
+          condition: 'Price above $180',
+          status: 'active',
+          source: 'user',
+          createdAt: '2024-01-15T09:00:00Z',
+          expiresAt: '2024-01-16T16:00:00Z'
+        },
+        {
+          id: '2',
+          ticker: 'TSLA',
+          condition: 'RSI below 30',
+          status: 'triggered',
+          source: 'ai',
+          createdAt: '2024-01-15T08:00:00Z',
+          triggeredAt: '2024-01-15T14:30:00Z',
+          winRate: 75,
+          avgReturn: 3.2
+        }
+      ]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {

@@ -1,8 +1,11 @@
-import React from 'react';
-import { Newspaper, ExternalLink, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Newspaper, ExternalLink, Clock, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { NewsItemWithAI } from '@/components/news/NewsItemWithAI';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NewsItem {
   id: string;
@@ -14,8 +17,33 @@ interface NewsItem {
 }
 
 export const NewsWidget: React.FC = () => {
-  // Mock news data
-  const newsItems: NewsItem[] = [
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    fetchNews();
+  }, []);
+
+  const fetchNews = async () => {
+    setLoading(true);
+    try {
+      const { data } = await supabase.functions.invoke('news', {
+        body: { symbol: 'SPY' }
+      });
+      
+      if (data?.items) {
+        setNewsItems(data.items.slice(0, 5));
+      }
+    } catch (error) {
+      console.error('Error fetching news:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fallback data
+  const fallbackNews: NewsItem[] = [
     {
       id: '1',
       title: 'Fed Signals Rate Cuts Amid Economic Uncertainty',

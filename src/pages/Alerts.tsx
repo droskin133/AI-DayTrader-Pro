@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Filter, TrendingUp, Target, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,18 +6,54 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { CreateAlertDialog } from '@/components/alerts/CreateAlertDialog';
 import { AlertsList } from '@/components/alerts/AlertsList';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Alerts: React.FC = () => {
   const [showCreateAlert, setShowCreateAlert] = useState(false);
   const [selectedTab, setSelectedTab] = useState('by-stock');
+  const { user } = useAuth();
 
-  // Mock data - will be replaced with real data
-  const alertStats = {
-    totalAlerts: 12,
-    activeAlerts: 8,
-    triggeredToday: 3,
-    winRate: 67.5,
-    avgReturn: 2.3
+  const [alertStats, setAlertStats] = useState({
+    totalAlerts: 0,
+    activeAlerts: 0,
+    triggeredToday: 0,
+    winRate: 0,
+    avgReturn: 0
+  });
+
+  useEffect(() => {
+    fetchAlertStats();
+  }, []);
+
+  const fetchAlertStats = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('alerts')
+        .select('status, created_at, triggered_at')
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+
+      if (data) {
+        const total = data.length;
+        const active = data.filter(alert => alert.status === 'active').length;
+        const today = new Date().toDateString();
+        const triggeredToday = data.filter(alert => 
+          alert.triggered_at && new Date(alert.triggered_at).toDateString() === today
+        ).length;
+
+        setAlertStats({
+          totalAlerts: total,
+          activeAlerts: active,
+          triggeredToday,
+          winRate: total > 0 ? Math.round((triggeredToday / total) * 100) : 0,
+          avgReturn: 2.3 // This would need additional tracking
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching alert stats:', error);
+    }
   };
 
   return (

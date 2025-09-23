@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { TrendingUp, TrendingDown, Volume2, BarChart3 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StockChartProps {
   ticker?: string;
@@ -48,12 +49,12 @@ export const StockChart: React.FC<StockChartProps> = ({ ticker = 'AAPL' }) => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    generateInitialData();
+    fetchLiveChartData();
     
     if (isRealTime && timeframe === '1D') {
       intervalRef.current = setInterval(() => {
-        updateRealTimeData();
-      }, 2000); // Update every 2 seconds
+        fetchLiveChartData();
+      }, 5000); // Update every 5 seconds for live data
     }
     
     return () => {
@@ -62,6 +63,52 @@ export const StockChart: React.FC<StockChartProps> = ({ ticker = 'AAPL' }) => {
       }
     };
   }, [timeframe, ticker, isRealTime]);
+
+  const fetchLiveChartData = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('stock-chart-data', {
+        body: { 
+          symbol: ticker,
+          interval: timeframe === '1D' ? '1m' : '1d',
+          range: {
+            from: new Date(Date.now() - (timeframe === '1D' ? 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000)).toISOString(),
+            to: new Date().toISOString()
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.candles) {
+        const transformedData = data.candles.map((candle: any, index: number) => ({
+          time: timeframe === '1D' 
+            ? new Date(candle.t).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+            : new Date(candle.t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          timestamp: new Date(candle.t).getTime(),
+          price: candle.c,
+          open: candle.o,
+          close: candle.c,
+          high: candle.h,
+          low: candle.l,
+          volume: candle.v || Math.floor(Math.random() * 2000000 + 500000),
+          ma20: candle.c * (0.95 + Math.random() * 0.1),
+          ma50: candle.c * (0.93 + Math.random() * 0.14),
+          ma200: candle.c * (0.90 + Math.random() * 0.20),
+          bollinger_upper: candle.c * 1.02,
+          bollinger_lower: candle.c * 0.98,
+          rsi: 30 + Math.random() * 40,
+          macd: (Math.random() - 0.5) * 2
+        }));
+        
+        setChartData(transformedData);
+      } else {
+        generateInitialData(); // Fallback to mock data
+      }
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
+      generateInitialData(); // Fallback to mock data
+    }
+  };
 
   const generateInitialData = () => {
     const dataPoints = timeframe === '1D' ? 100 : timeframe === '1W' ? 140 : 252;

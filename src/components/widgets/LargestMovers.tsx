@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Mover {
   ticker: string;
@@ -15,19 +16,47 @@ interface Mover {
 
 export const LargestMovers: React.FC = () => {
   const [timeframe, setTimeframe] = useState('1d');
+  const [winners, setWinners] = useState<Mover[]>([]);
+  const [losers, setLosers] = useState<Mover[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data - will be replaced with real API calls
-  const winners: Mover[] = [
-    { ticker: 'NVDA', price: 875.32, change: 45.67, changePercent: 5.5, volume: 45234567 },
-    { ticker: 'AAPL', price: 175.43, change: 7.21, changePercent: 4.3, volume: 32145879 },
-    { ticker: 'GOOGL', price: 2654.78, change: 89.45, changePercent: 3.5, volume: 18976543 },
-  ];
+  useEffect(() => {
+    fetchMarketMovers();
+  }, [timeframe]);
 
-  const losers: Mover[] = [
-    { ticker: 'TSLA', price: 198.76, change: -12.45, changePercent: -5.9, volume: 67543219 },
-    { ticker: 'META', price: 298.54, change: -15.67, changePercent: -5.0, volume: 29876543 },
-    { ticker: 'NFLX', price: 445.32, change: -18.23, changePercent: -3.9, volume: 15432178 },
-  ];
+  const fetchMarketMovers = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('finnhub-data', {
+        body: { 
+          type: 'movers',
+          timeframe 
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.winners && data?.losers) {
+        setWinners(data.winners);
+        setLosers(data.losers);
+      }
+    } catch (error) {
+      console.error('Error fetching market movers:', error);
+      // Fallback data
+      setWinners([
+        { ticker: 'NVDA', price: 875.32, change: 45.67, changePercent: 5.5, volume: 45234567 },
+        { ticker: 'AAPL', price: 175.43, change: 7.21, changePercent: 4.3, volume: 32145879 },
+        { ticker: 'GOOGL', price: 2654.78, change: 89.45, changePercent: 3.5, volume: 18976543 },
+      ]);
+      setLosers([
+        { ticker: 'TSLA', price: 198.76, change: -12.45, changePercent: -5.9, volume: 67543219 },
+        { ticker: 'META', price: 298.54, change: -15.67, changePercent: -5.0, volume: 29876543 },
+        { ticker: 'NFLX', price: 445.32, change: -18.23, changePercent: -3.9, volume: 15432178 },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatVolume = (volume: number) => {
     if (volume >= 1000000) {
@@ -81,8 +110,8 @@ export const LargestMovers: React.FC = () => {
             <Badge variant="outline" className="text-xs">
               {timeframe}
             </Badge>
-            <Button variant="ghost" size="sm">
-              <RotateCcw className="h-3 w-3" />
+            <Button variant="ghost" size="sm" onClick={fetchMarketMovers} disabled={loading}>
+              <RotateCcw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
         </div>

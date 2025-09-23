@@ -15,6 +15,7 @@ import { RiskManager } from '@/components/risk/RiskManager';
 import { PerformanceAnalytics } from '@/components/analytics/PerformanceAnalytics';
 import { OptionsFlow } from '@/components/options/OptionsFlow';
 import { InstitutionalData } from '@/components/institutional/InstitutionalData';
+import { AIMarketAssistant } from '@/components/ai/AIMarketAssistant';
 import { useAuth } from '@/contexts/AuthContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -35,6 +36,9 @@ const createSafeWidget = (id: string, component: React.ComponentType | undefined
 };
 
 const defaultWidgets: Widget[] = [
+  createSafeWidget('ai-assistant', AIMarketAssistant, 'AI Market Assistant'),
+  createSafeWidget('largest-movers', LargestMovers, 'Largest Movers'),
+  createSafeWidget('news', NewsWidget, 'Breaking News'),
   createSafeWidget('trader-pro', AlphaScout, 'Trader Pro'),
   createSafeWidget('portfolio', PortfolioTracker, 'Portfolio Tracker'),
   createSafeWidget('ai-scanner', AIDeepScanner, 'AI Deep Scanner'),
@@ -45,8 +49,6 @@ const defaultWidgets: Widget[] = [
   createSafeWidget('institutional', InstitutionalData, 'Institutional Data'),
   createSafeWidget('backtest', BacktestQuickLaunch, 'Quick Backtest'),
   createSafeWidget('watchlist', WatchlistWidget, 'Watchlist'),
-  createSafeWidget('largest-movers', LargestMovers, 'Largest Movers'),
-  createSafeWidget('news', NewsWidget, 'In the News'),
   createSafeWidget('alerts', AlertsWidget, 'Open Alerts'),
 ].filter((widget): widget is Widget => widget !== null);
 
@@ -139,7 +141,9 @@ const Dashboard: React.FC = () => {
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
                             className={`${
-                              widget.id === 'trader-pro' || widget.id === 'portfolio'
+                              widget.id === 'ai-assistant'
+                                ? 'lg:col-span-12'
+                                : widget.id === 'trader-pro' || widget.id === 'portfolio'
                                 ? 'lg:col-span-8' 
                                 : widget.id === 'ai-scanner' || widget.id === 'sentiment' || widget.id === 'risk-manager' || widget.id === 'performance'
                                 ? 'lg:col-span-6'

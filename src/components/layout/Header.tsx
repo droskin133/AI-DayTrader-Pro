@@ -61,15 +61,14 @@ export const Header: React.FC = () => {
 
         {/* Navigation Links */}
         <nav className="hidden md:flex space-x-6">
+          <Button variant="ghost" onClick={() => navigate('/')}>
+            Dashboard
+          </Button>
           <Button variant="ghost" onClick={() => navigate('/watchlist')}>
             Watchlist
           </Button>
-          <Button variant="ghost" onClick={() => navigate('/alerts')}>
-            Alerts
-          </Button>
-          <Button variant="ghost" onClick={() => navigate('/backtests')}>
-            <BarChart3 className="mr-2 h-4 w-4" />
-            Backtests
+          <Button variant="ghost" onClick={() => navigate('/news')}>
+            News
           </Button>
           {!user && (
             <>
@@ -98,28 +97,39 @@ export const Header: React.FC = () => {
 
         {/* Right side */}
         <div className="flex items-center space-x-4">
-          {/* Notifications */}
-          <Button variant="ghost" size="sm" className="relative">
-            <Bell className="h-4 w-4" />
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-            >
-              3
-            </Badge>
-          </Button>
+          {user && (
+            <>
+              {/* Alerts Button */}
+              <Button variant="ghost" size="sm" onClick={() => navigate('/alerts')}>
+                <BarChart3 className="h-4 w-4 mr-1" />
+                Alerts
+              </Button>
+
+              {/* Notifications */}
+              <Button variant="ghost" size="sm" className="relative">
+                <Bell className="h-4 w-4" />
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                >
+                  3
+                </Badge>
+              </Button>
+            </>
+          )}
 
           {/* User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                  <span className="text-sm font-medium text-primary-foreground">
-                    {user?.email?.substring(0, 2).toUpperCase() || 'AI'}
-                  </span>
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                    <span className="text-sm font-medium text-primary-foreground">
+                      {user?.email?.substring(0, 2).toUpperCase() || 'AI'}
+                    </span>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
@@ -136,27 +146,9 @@ export const Header: React.FC = () => {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to="/settings">
+                <Link to="/profile">
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/billing">
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  <span>Billing</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/legal">
-                  <FileText className="mr-2 h-4 w-4" />
-                  <span>Legal</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/admin">
-                  <Shield className="mr-2 h-4 w-4" />
-                  <span>Admin Panel</span>
+                  <span>Profile</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -166,6 +158,7 @@ export const Header: React.FC = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          )}
         </div>
       </div>
       

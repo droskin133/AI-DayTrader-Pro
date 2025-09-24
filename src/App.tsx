@@ -20,6 +20,7 @@ import SignIn from "./pages/SignIn";
 import Paywall from "./pages/Paywall";
 import NotFound from "./pages/NotFound";
 import Watchlist from "./pages/Watchlist";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -31,13 +32,13 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Layout>
-              <Routes>
+            <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/watchlist" element={<Watchlist />} />
                 <Route path="/stock/:ticker" element={<Stock />} />
                 <Route path="/alerts" element={<Alerts />} />
                 <Route path="/news" element={<News />} />
+                <Route path="/profile" element={<Profile />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/billing" element={<Billing />} />
                 <Route path="/legal" element={<Legal />} />
@@ -48,7 +49,6 @@ const App = () => (
                 <Route path="/paywall" element={<Paywall />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </Layout>
           </BrowserRouter>
         </AuthProvider>
       </ThemeProvider>

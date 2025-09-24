@@ -1,200 +1,237 @@
-import React, { useState } from 'react';
-import { Search, Eye, EyeOff } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Clock, ExternalLink, TrendingUp } from 'lucide-react';
+import Layout from '@/components/layout/Layout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { NewsItemWithAI } from '@/components/news/NewsItemWithAI';
+import { FeedbackButton } from '@/components/layout/FeedbackButton';
 
 interface NewsItem {
   id: string;
-  title: string;
-  summary: string;
-  source: string;
-  publishedAt: string;
+  headline: string;
   url: string;
-  tickers: string[];
-  sentiment: 'positive' | 'negative' | 'neutral';
+  published_at: string;
+  symbol: string;
+  sentiment: number;
+  summary?: string;
 }
 
 const News: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [watchedTopics, setWatchedTopics] = useState<string[]>([]);
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTicker, setSearchTicker] = useState('');
+  const [sectorFilter, setSectorFilter] = useState('all');
 
-  // Mock news data
-  const newsItems: NewsItem[] = [
-    {
-      id: '1',
-      title: 'Federal Reserve Signals Potential Rate Cuts Amid Economic Uncertainty',
-      summary: 'Fed officials hint at possible monetary policy adjustments as inflation shows signs of cooling...',
-      source: 'Reuters',
-      publishedAt: '2024-01-15T10:30:00Z',
-      url: '#',
-      tickers: ['SPY', 'QQQ'],
-      sentiment: 'neutral'
-    },
-    {
-      id: '2',
-      title: 'Apple Reports Strong Q4 Earnings, Beats Revenue Expectations',
-      summary: 'Apple Inc. delivered better-than-expected quarterly results driven by strong iPhone sales...',
-      source: 'Bloomberg',
-      publishedAt: '2024-01-15T09:15:00Z',
-      url: '#',
-      tickers: ['AAPL'],
-      sentiment: 'positive'
-    },
-    {
-      id: '3',
-      title: 'Tesla Stock Drops on Production Concerns',
-      summary: 'Shares of Tesla fell in pre-market trading as analysts express concerns over production targets...',
-      source: 'CNBC',
-      publishedAt: '2024-01-15T08:45:00Z',
-      url: '#',
-      tickers: ['TSLA'],
-      sentiment: 'negative'
-    }
-  ];
+  useEffect(() => {
+    fetchGlobalNews();
+  }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Implement search functionality
-    console.log('Searching for:', searchQuery);
-  };
+  const fetchGlobalNews = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch news for multiple major tickers to get global news
+      const majorTickers = ['SPY', 'AAPL', 'MSFT', 'GOOGL', 'TSLA', 'NVDA', 'AMZN', 'META'];
+      const allNews: NewsItem[] = [];
 
-  const toggleWatchTopic = (topic: string) => {
-    setWatchedTopics(prev => 
-      prev.includes(topic) 
-        ? prev.filter(t => t !== topic)
-        : [...prev, topic]
-    );
-  };
+      for (const ticker of majorTickers.slice(0, 4)) { // Limit to avoid rate limits
+        try {
+          const { data, error } = await supabase.functions.invoke('news', {
+            body: { symbol: ticker }
+          });
 
-  const getSentimentColor = (sentiment: string) => {
-    switch (sentiment) {
-      case 'positive': return 'text-bull';
-      case 'negative': return 'text-bear';
-      default: return 'text-neutral';
+          if (!error && data?.items) {
+            const newsWithSymbol = data.items.map((item: any) => ({
+              ...item,
+              symbol: ticker
+            }));
+            allNews.push(...newsWithSymbol);
+          }
+        } catch (error) {
+          console.error(`Error fetching news for ${ticker}:`, error);
+        }
+      }
+
+      // Sort by published date and remove duplicates
+      const uniqueNews = allNews
+        .filter((item, index, self) => 
+          index === self.findIndex(t => t.headline === item.headline)
+        )
+        .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
+        .slice(0, 20); // Show latest 20 articles
+
+      setNews(uniqueNews);
+    } catch (error) {
+      console.error('Error fetching global news:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getSentimentBadge = (sentiment: string) => {
-    switch (sentiment) {
-      case 'positive': return 'default';
-      case 'negative': return 'destructive';
-      default: return 'secondary';
+  const handleSearchTicker = async () => {
+    if (!searchTicker.trim()) {
+      fetchGlobalNews();
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.functions.invoke('news', {
+        body: { symbol: searchTicker.toUpperCase() }
+      });
+
+      if (error) throw error;
+
+      const newsWithSymbol = data?.items?.map((item: any) => ({
+        ...item,
+        symbol: searchTicker.toUpperCase()
+      })) || [];
+
+      setNews(newsWithSymbol);
+    } catch (error) {
+      console.error('Error searching ticker news:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getSentimentBadge = (sentiment: number) => {
+    if (sentiment > 0.1) {
+      return <Badge className="bg-bull/20 text-bull border-bull/30">Positive</Badge>;
+    } else if (sentiment < -0.1) {
+      return <Badge className="bg-bear/20 text-bear border-bear/30">Negative</Badge>;
+    } else {
+      return <Badge variant="secondary">Neutral</Badge>;
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const publishedDate = new Date(dateString);
+    const diffInHours = Math.floor((now.getTime() - publishedDate.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) {
+      return 'Just now';
+    } else if (diffInHours < 24) {
+      return `${diffInHours}h ago`;
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays}d ago`;
     }
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Market News</h1>
-          <p className="text-muted-foreground">
-            Stay updated with the latest market news and analysis
-          </p>
-        </div>
-
-        {/* Search */}
-        <div className="mb-6">
-          <form onSubmit={handleSearch} className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search news, tickers, or topics..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </form>
-        </div>
-
-        {/* Watched Topics */}
-        {watchedTopics.length > 0 && (
+    <Layout>
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
           <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-3">Watched Topics</h2>
-            <div className="flex flex-wrap gap-2">
-              {watchedTopics.map((topic) => (
-                <Badge key={topic} variant="outline" className="flex items-center gap-1">
-                  {topic}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-auto p-0 ml-1"
-                    onClick={() => toggleWatchTopic(topic)}
-                  >
-                    <EyeOff className="h-3 w-3" />
-                  </Button>
-                </Badge>
+            <h1 className="text-3xl font-bold mb-4">Market News</h1>
+            
+            {/* Filters */}
+            <div className="flex space-x-4 mb-4">
+              <div className="flex space-x-2 flex-1">
+                <Input
+                  placeholder="Search by ticker (e.g., AAPL)"
+                  value={searchTicker}
+                  onChange={(e) => setSearchTicker(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearchTicker()}
+                />
+                <Button onClick={handleSearchTicker}>Search</Button>
+              </div>
+              
+              <Select value={sectorFilter} onValueChange={setSectorFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by sector" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sectors</SelectItem>
+                  <SelectItem value="tech">Technology</SelectItem>
+                  <SelectItem value="finance">Finance</SelectItem>
+                  <SelectItem value="healthcare">Healthcare</SelectItem>
+                  <SelectItem value="energy">Energy</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {searchTicker && (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setSearchTicker('');
+                  fetchGlobalNews();
+                }}
+                className="mb-4"
+              >
+                Clear Filter - Show All News
+              </Button>
+            )}
+          </div>
+
+          {/* News Feed */}
+          {loading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-6">
+                    <div className="space-y-3">
+                      <div className="h-4 w-3/4 bg-muted rounded" />
+                      <div className="h-4 w-1/2 bg-muted rounded" />
+                      <div className="flex space-x-2">
+                        <div className="h-6 w-16 bg-muted rounded" />
+                        <div className="h-6 w-20 bg-muted rounded" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* News Feed */}
-        <div className="space-y-4">
-          {newsItems.map((item) => (
-            <Card key={item.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    <Badge variant={getSentimentBadge(item.sentiment)}>
-                      {item.sentiment}
-                    </Badge>
-                    <span className="text-sm text-muted-foreground">{item.source}</span>
-                    <span className="text-sm text-muted-foreground">
-                      {new Date(item.publishedAt).toLocaleTimeString()}
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleWatchTopic(item.title.split(' ')[0]);
-                    }}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    {watchedTopics.includes(item.title.split(' ')[0]) ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-                
-                <h3 className="text-lg font-semibold mb-2 hover:text-primary transition-colors">
-                  {item.title}
-                </h3>
-                
-                <p className="text-muted-foreground mb-3">
-                  {item.summary}
+          ) : news.length === 0 ? (
+            <Card className="text-center py-12">
+              <CardContent>
+                <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No news found</h3>
+                <p className="text-muted-foreground">
+                  {searchTicker ? `No recent news for ${searchTicker}` : 'No recent market news available'}
                 </p>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    {item.tickers.map((ticker) => (
-                      <Badge key={ticker} variant="outline">
-                        {ticker}
-                      </Badge>
-                    ))}
-                  </div>
-                  <Button variant="ghost" size="sm" asChild>
-                    <a href={item.url} target="_blank" rel="noopener noreferrer">
-                      Read More
-                    </a>
-                  </Button>
-                </div>
               </CardContent>
             </Card>
-          ))}
+          ) : (
+            <div className="space-y-4">
+              {news.map((article) => (
+                <Card key={article.id}>
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Badge variant="outline">{article.symbol}</Badge>
+                          <div className="text-sm text-muted-foreground flex items-center space-x-1">
+                            <Clock className="h-3 w-3" />
+                            <span>{formatTimeAgo(article.published_at)}</span>
+                          </div>
+                          {getSentimentBadge(article.sentiment)}
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">{article.headline}</h3>
+                        <Button variant="outline" size="sm" onClick={() => window.open(article.url, '_blank')}>
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Read Full Article
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
-
-        {/* Load More */}
-        <div className="mt-8 text-center">
-          <Button variant="outline">Load More News</Button>
-        </div>
+        
+        <FeedbackButton />
       </div>
-    </div>
+    </Layout>
   );
 };
 

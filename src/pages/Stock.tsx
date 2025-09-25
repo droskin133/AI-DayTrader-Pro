@@ -15,6 +15,8 @@ import { InstitutionalData } from '@/components/stock/InstitutionalData';
 import { DriversList } from '@/components/drivers/DriversList';
 import { ChartGPT } from '@/components/ai/ChartGPT';
 import { AISuggestions } from '@/components/alerts/AISuggestions';
+import { SECFilings } from '@/components/stock/SECFilings';
+import { InsiderTrades } from '@/components/stock/InsiderTrades';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -233,6 +235,8 @@ const Stock: React.FC = () => {
           <div className="space-y-6">
             <AIStockAnalysis ticker={ticker} />
             <ChartGPT ticker={ticker} />
+            <SECFilings ticker={ticker} />
+            <InsiderTrades ticker={ticker} />
             <DriversList ticker={ticker} />
             <AISuggestions ticker={ticker} />
             <StockNews ticker={ticker} />

@@ -155,6 +155,36 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_learning_log: {
+        Row: {
+          created_at: string | null
+          id: string
+          input: Json
+          mode: string
+          output: Json
+          ticker: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          input: Json
+          mode: string
+          output: Json
+          ticker?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          input?: Json
+          mode?: string
+          output?: Json
+          ticker?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       ai_performance_daily: {
         Row: {
           alerts_total: number
@@ -1032,6 +1062,27 @@ export type Database = {
         }
         Relationships: []
       }
+      market_data_cache: {
+        Row: {
+          created_at: string | null
+          data: Json
+          id: string
+          ticker: string
+        }
+        Insert: {
+          created_at?: string | null
+          data: Json
+          id?: string
+          ticker: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json
+          id?: string
+          ticker?: string
+        }
+        Relationships: []
+      }
       news_cache: {
         Row: {
           created_at: string | null
@@ -1316,6 +1367,42 @@ export type Database = {
         }
         Relationships: []
       }
+      sec_insider_trades: {
+        Row: {
+          created_at: string | null
+          id: string
+          insider_name: string
+          price: number | null
+          role: string | null
+          shares: number | null
+          ticker: string
+          transaction_date: string | null
+          transaction_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          insider_name: string
+          price?: number | null
+          role?: string | null
+          shares?: number | null
+          ticker: string
+          transaction_date?: string | null
+          transaction_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          insider_name?: string
+          price?: number | null
+          role?: string | null
+          shares?: number | null
+          ticker?: string
+          transaction_date?: string | null
+          transaction_type?: string | null
+        }
+        Relationships: []
+      }
       sp500: {
         Row: {
           ticker: string
@@ -1433,6 +1520,36 @@ export type Database = {
           key?: string
           updated_at?: string | null
           value?: string | null
+        }
+        Relationships: []
+      }
+      top_movers: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          percent_change: number | null
+          price: number | null
+          ticker: string
+          volume: number | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          id?: string
+          percent_change?: number | null
+          price?: number | null
+          ticker: string
+          volume?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          percent_change?: number | null
+          price?: number | null
+          ticker?: string
+          volume?: number | null
         }
         Relationships: []
       }

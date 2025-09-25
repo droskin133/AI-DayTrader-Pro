@@ -91,7 +91,7 @@ serve(async (req) => {
           sources.push('sec');
         }
       } catch (error) {
-        console.log('Quiver API error:', error.message);
+        console.log('Quiver API error:', (error as Error).message);
       }
     }
 
@@ -112,7 +112,7 @@ serve(async (req) => {
           // For now, we'll use database cache
         }
       } catch (secError) {
-        console.log('SEC API error:', secError.message);
+        console.log('SEC API error:', (secError as Error).message);
       }
     }
 
@@ -195,7 +195,7 @@ serve(async (req) => {
     // Log error to audit_logs
     await supabase.from('audit_logs').insert({
       function_name: 'institutional',
-      error_message: error.message,
+      error_message: (error as Error).message,
       request_id: requestId,
       payload_hash: 'error',
       upstream_status: 500,

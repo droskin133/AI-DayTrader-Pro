@@ -147,6 +147,19 @@ Provide structured analysis with:
       confidence: Math.min(Math.max(confidence, 0), 1) // Ensure 0-1 range
     };
 
+    // Log to AI learning system
+    try {
+      await supabase.from('ai_learning_log').insert({
+        user_id: null, // No auth required for public analysis
+        ticker: symbol,
+        mode,
+        input: { symbol, payload },
+        output: result
+      });
+    } catch (learningError) {
+      console.warn('Failed to log AI learning data:', (learningError as Error).message);
+    }
+
     return new Response(
       JSON.stringify(result),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -158,7 +171,7 @@ Provide structured analysis with:
     // Log error to audit_logs
     await supabase.from('audit_logs').insert({
       function_name: 'ai-analysis',
-      error_message: error.message,
+      error_message: (error as Error).message,
       request_id: requestId,
       payload_hash: 'error',
       upstream_status: 500,

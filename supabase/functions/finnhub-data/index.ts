@@ -35,7 +35,32 @@ serve(async (req) => {
 
     const finnhubApiKey = Deno.env.get("FINNHUB_API_KEY");
     if (!finnhubApiKey) {
-      throw new Error('FINNHUB_API_KEY not configured');
+      await supabase.from('audit_logs').insert({
+        function_name: 'finnhub-data',
+        error_message: 'Invalid API key — check configuration.',
+        request_id: requestId,
+        upstream_status: 401
+      });
+      return new Response(
+        JSON.stringify({ error: 'Invalid API key — check configuration.' }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check cache first for recent data (1 minute)
+    const { data: cachedData } = await supabase
+      .from('market_data_cache')
+      .select('*')
+      .eq('ticker', symbol)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (cachedData && new Date(cachedData.created_at).getTime() > Date.now() - (60 * 1000)) {
+      return new Response(
+        JSON.stringify({ ...cachedData.data, cached: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Convert dates to timestamps
@@ -61,6 +86,13 @@ serve(async (req) => {
     // Handle rate limiting by falling back to 1-minute resolution
     if (!response.ok) {
       if (response.status === 429) {
+        await supabase.from('audit_logs').insert({
+          function_name: 'finnhub-data',
+          error_message: 'Rate limit exceeded — try again later.',
+          request_id: requestId,
+          upstream_status: 429
+        });
+        
         resolution = "1";
         fallbackUsed = true;
         url = `https://finnhub.io/api/v1/stock/candle?symbol=${symbol}&resolution=${resolution}&from=${fromTimestamp}&to=${toTimestamp}&token=${finnhubApiKey}`;
@@ -77,6 +109,12 @@ serve(async (req) => {
       }
       
       if (!response.ok) {
+        await supabase.from('audit_logs').insert({
+          function_name: 'finnhub-data',
+          error_message: `Finnhub API error: ${response.status} ${response.statusText}`,
+          request_id: requestId,
+          upstream_status: response.status
+        });
         throw new Error(`Finnhub API error: ${response.status} ${response.statusText}`);
       }
     }
@@ -119,6 +157,16 @@ serve(async (req) => {
       fallback_used: fallbackUsed
     };
 
+    // Cache the result for 1 minute
+    try {
+      await supabase.from('market_data_cache').insert({
+        ticker: symbol,
+        data: result
+      });
+    } catch (cacheError) {
+      console.warn('Failed to cache data:', (cacheError as Error).message);
+    }
+
     return new Response(
       JSON.stringify(result),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -130,7 +178,7 @@ serve(async (req) => {
     // Log error to audit_logs
     await supabase.from('audit_logs').insert({
       function_name: 'finnhub-data',
-      error_message: error.message,
+      error_message: (error as Error).message,
       request_id: requestId,
       payload_hash: 'error',
       upstream_status: 500,

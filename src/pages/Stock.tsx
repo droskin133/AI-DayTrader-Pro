@@ -9,6 +9,7 @@ import LivePrice from '@/components/LivePrice';
 import { fetchLivePrice } from '@/lib/fetchLivePrice';
 import { StockChart } from '@/components/charts/StockChart';
 import { AIStockAnalysis } from '@/components/ai/AIStockAnalysis';
+import { AITraderPro } from '@/components/ai/AITraderPro';
 import { StockNews } from '@/components/stock/StockNews';
 import { StockAlerts } from '@/components/stock/StockAlerts';
 import { InstitutionalData } from '@/components/stock/InstitutionalData';
@@ -233,6 +234,7 @@ const Stock: React.FC = () => {
 
           {/* Right Column - Analysis & Data */}
           <div className="space-y-6">
+            <AITraderPro ticker={ticker} />
             <AIStockAnalysis ticker={ticker} />
             <ChartGPT ticker={ticker} />
             <SECFilings ticker={ticker} />

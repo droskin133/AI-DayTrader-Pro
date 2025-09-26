@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TickerData {
   symbol: string;
@@ -12,29 +14,65 @@ interface TickerData {
 export const TickerTape: React.FC = () => {
   const [tickers, setTickers] = useState<TickerData[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  const getTickerName = (symbol: string): string => {
+    const names: Record<string, string> = {
+      'SPY': 'S&P 500',
+      'QQQ': 'Nasdaq',
+      'DIA': 'Dow Jones',
+      'GLD': 'Gold',
+      'USO': 'Oil',
+      'BTC-USD': 'Bitcoin'
+    };
+    return names[symbol] || symbol;
+  };
 
   useEffect(() => {
     const fetchTickerData = async () => {
       try {
-        // Static ticker symbols for indices/commodities/crypto
-        const symbols = [
-          { symbol: '^GSPC', name: 'S&P 500' },
-          { symbol: '^DJI', name: 'Dow Jones' },
-          { symbol: '^IXIC', name: 'Nasdaq' },
-          { symbol: 'CL=F', name: 'Oil' },
-          { symbol: 'GC=F', name: 'Gold' },
-          { symbol: 'BTC-USD', name: 'Bitcoin' }
-        ];
+        // Get user's watchlist if authenticated
+        let watchlistSymbols: string[] = [];
+        if (user) {
+          const { data } = await supabase
+            .from('watchlist')
+            .select('ticker')
+            .eq('user_id', user.id);
+          watchlistSymbols = data?.map(w => w.ticker) || [];
+        }
 
-        const mockData: TickerData[] = symbols.map(({ symbol, name }) => ({
-          symbol,
-          name,
-          price: Math.random() * 1000 + 100,
-          change: (Math.random() - 0.5) * 20,
-          changePercent: (Math.random() - 0.5) * 5
-        }));
+        // Default indices and commodities
+        const defaultSymbols = ['SPY', 'QQQ', 'DIA', 'GLD', 'USO', 'BTC-USD'];
+        const allSymbols = [...new Set([...watchlistSymbols, ...defaultSymbols])];
 
-        setTickers(mockData);
+        // Fetch live prices from equity snapshots
+        const { data: snapshots } = await supabase
+          .from('equity_snapshots')
+          .select('*')
+          .in('ticker', allSymbols)
+          .order('snapshot_time', { ascending: false });
+
+        // Get latest snapshot for each ticker
+        const latestByTicker = new Map();
+        snapshots?.forEach(snap => {
+          if (!latestByTicker.has(snap.ticker) || 
+              new Date(snap.snapshot_time) > new Date(latestByTicker.get(snap.ticker).snapshot_time)) {
+            latestByTicker.set(snap.ticker, snap);
+          }
+        });
+
+        const tickerData: TickerData[] = allSymbols.map(symbol => {
+          const snapshot = latestByTicker.get(symbol);
+          return {
+            symbol,
+            name: getTickerName(symbol),
+            price: snapshot?.price || 0,
+            change: snapshot ? (snapshot.price * snapshot.percent_change / 100) : 0,
+            changePercent: snapshot?.percent_change || 0
+          };
+        });
+        
+        setTickers(tickerData);
       } catch (error) {
         console.error('Error fetching ticker data:', error);
       } finally {

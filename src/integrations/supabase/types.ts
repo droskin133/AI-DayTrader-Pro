@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_auto_flags: {
         Row: {
           created_at: string | null
@@ -23,7 +38,7 @@ export type Database = {
           metadata: Json | null
           risk_score: number | null
           symbol: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
@@ -33,7 +48,7 @@ export type Database = {
           metadata?: Json | null
           risk_score?: number | null
           symbol: string
-          user_id?: string | null
+          user_id?: string
         }
         Update: {
           created_at?: string | null
@@ -43,7 +58,7 @@ export type Database = {
           metadata?: Json | null
           risk_score?: number | null
           symbol?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -55,7 +70,7 @@ export type Database = {
           status: string | null
           symbol: string
           trigger_context: Json | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           alert_text: string
@@ -64,7 +79,7 @@ export type Database = {
           status?: string | null
           symbol: string
           trigger_context?: Json | null
-          user_id?: string | null
+          user_id?: string
         }
         Update: {
           alert_text?: string
@@ -73,7 +88,7 @@ export type Database = {
           status?: string | null
           symbol?: string
           trigger_context?: Json | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -104,84 +119,186 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_commodity_signals: {
+        Row: {
+          breakout_level: number | null
+          commodity: string
+          confidence_score: number | null
+          created_at: string | null
+          event: string
+          id: number
+          reason: string | null
+          ticker: string
+        }
+        Insert: {
+          breakout_level?: number | null
+          commodity: string
+          confidence_score?: number | null
+          created_at?: string | null
+          event: string
+          id?: number
+          reason?: string | null
+          ticker: string
+        }
+        Update: {
+          breakout_level?: number | null
+          commodity?: string
+          confidence_score?: number | null
+          created_at?: string | null
+          event?: string
+          id?: number
+          reason?: string | null
+          ticker?: string
+        }
+        Relationships: []
+      }
       ai_configs: {
         Row: {
           key: string
           updated_at: string
           updated_by: string | null
+          user_id: string
           value: Json
         }
         Insert: {
           key: string
           updated_at?: string
           updated_by?: string | null
+          user_id?: string
           value?: Json
         }
         Update: {
           key?: string
           updated_at?: string
           updated_by?: string | null
+          user_id?: string
           value?: Json
         }
         Relationships: []
       }
       ai_feedback: {
         Row: {
+          ai_output_id: string | null
           created_at: string | null
           feature: string | null
           id: string
           prompt: string | null
           response: string | null
           thumbs_up: boolean | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
+          ai_output_id?: string | null
           created_at?: string | null
           feature?: string | null
           id?: string
           prompt?: string | null
           response?: string | null
           thumbs_up?: boolean | null
-          user_id?: string | null
+          user_id?: string
         }
         Update: {
+          ai_output_id?: string | null
           created_at?: string | null
           feature?: string | null
           id?: string
           prompt?: string | null
           response?: string | null
           thumbs_up?: boolean | null
-          user_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_global_knowledge: {
+        Row: {
+          confidence: number | null
+          content: string | null
+          created_at: string | null
+          id: number
+          insight_type: string | null
+          reinforced_count: number | null
+          source_user: string | null
+          ticker: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          content?: string | null
+          created_at?: string | null
+          id?: number
+          insight_type?: string | null
+          reinforced_count?: number | null
+          source_user?: string | null
+          ticker?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          content?: string | null
+          created_at?: string | null
+          id?: number
+          insight_type?: string | null
+          reinforced_count?: number | null
+          source_user?: string | null
+          ticker?: string | null
+        }
+        Relationships: []
+      }
+      ai_institutional_signals: {
+        Row: {
+          details: string | null
+          detected_at: string | null
+          id: number
+          signal_type: string | null
+          source: string | null
+          ticker: string
+        }
+        Insert: {
+          details?: string | null
+          detected_at?: string | null
+          id?: number
+          signal_type?: string | null
+          source?: string | null
+          ticker: string
+        }
+        Update: {
+          details?: string | null
+          detected_at?: string | null
+          id?: number
+          signal_type?: string | null
+          source?: string | null
+          ticker?: string
         }
         Relationships: []
       }
       ai_learning_log: {
         Row: {
+          context: string | null
           created_at: string | null
           id: string
           input: Json
           mode: string
           output: Json
           ticker: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
+          context?: string | null
           created_at?: string | null
           id?: string
           input: Json
           mode: string
           output: Json
           ticker?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Update: {
+          context?: string | null
           created_at?: string | null
           id?: string
           input?: Json
           mode?: string
           output?: Json
           ticker?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -195,6 +312,7 @@ export type Database = {
           model: string
           ticker: string
           updated_at: string
+          user_id: string
           win_rate: number | null
         }
         Insert: {
@@ -206,6 +324,7 @@ export type Database = {
           model?: string
           ticker: string
           updated_at?: string
+          user_id?: string
           win_rate?: number | null
         }
         Update: {
@@ -217,7 +336,44 @@ export type Database = {
           model?: string
           ticker?: string
           updated_at?: string
+          user_id?: string
           win_rate?: number | null
+        }
+        Relationships: []
+      }
+      ai_run_metrics: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          latency_ms: number | null
+          mode: string
+          ticker: string | null
+          upstream_status: number | null
+          used_cache: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          latency_ms?: number | null
+          mode: string
+          ticker?: string | null
+          upstream_status?: number | null
+          used_cache?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          latency_ms?: number | null
+          mode?: string
+          ticker?: string | null
+          upstream_status?: number | null
+          used_cache?: boolean | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -229,7 +385,7 @@ export type Database = {
           id: string
           stock_id: string | null
           suggestion: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           ai_tool: Database["public"]["Enums"]["ai_tool_enum"]
@@ -238,7 +394,7 @@ export type Database = {
           id?: string
           stock_id?: string | null
           suggestion?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Update: {
           ai_tool?: Database["public"]["Enums"]["ai_tool_enum"]
@@ -247,7 +403,7 @@ export type Database = {
           id?: string
           stock_id?: string | null
           suggestion?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -664,6 +820,39 @@ export type Database = {
         }
         Relationships: []
       }
+      commodity_equity_map: {
+        Row: {
+          commodity: string
+          created_at: string | null
+          id: number
+          impact_type: string | null
+          notes: string | null
+          sector: string
+          symbol: string
+          weight: number | null
+        }
+        Insert: {
+          commodity: string
+          created_at?: string | null
+          id?: number
+          impact_type?: string | null
+          notes?: string | null
+          sector: string
+          symbol: string
+          weight?: number | null
+        }
+        Update: {
+          commodity?: string
+          created_at?: string | null
+          id?: number
+          impact_type?: string | null
+          notes?: string | null
+          sector?: string
+          symbol?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
       congress_trades: {
         Row: {
           amount_range: string | null
@@ -763,6 +952,177 @@ export type Database = {
           source_url?: string | null
           stock_ticker?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      equity_snapshots: {
+        Row: {
+          id: string
+          percent_change: number | null
+          price: number
+          snapshot_time: string | null
+          ticker: string
+          volume: number | null
+        }
+        Insert: {
+          id?: string
+          percent_change?: number | null
+          price: number
+          snapshot_time?: string | null
+          ticker: string
+          volume?: number | null
+        }
+        Update: {
+          id?: string
+          percent_change?: number | null
+          price?: number
+          snapshot_time?: string | null
+          ticker?: string
+          volume?: number | null
+        }
+        Relationships: []
+      }
+      event_macro_map: {
+        Row: {
+          created_at: string
+          event_type_id: string
+          id: string
+          index_symbol: string
+          propagation: Json | null
+        }
+        Insert: {
+          created_at?: string
+          event_type_id: string
+          id?: string
+          index_symbol: string
+          propagation?: Json | null
+        }
+        Update: {
+          created_at?: string
+          event_type_id?: string
+          id?: string
+          index_symbol?: string
+          propagation?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_macro_map_event_type_id_fkey"
+            columns: ["event_type_id"]
+            isOneToOne: false
+            referencedRelation: "event_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_sector_layers: {
+        Row: {
+          created_at: string
+          event_type_id: string
+          id: string
+          impact: string
+          layer: number
+          sector: string | null
+          ticker: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          event_type_id: string
+          id?: string
+          impact: string
+          layer: number
+          sector?: string | null
+          ticker: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          event_type_id?: string
+          id?: string
+          impact?: string
+          layer?: number
+          sector?: string | null
+          ticker?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_sector_layers_event_type_id_fkey"
+            columns: ["event_type_id"]
+            isOneToOne: false
+            referencedRelation: "event_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_ticker_map: {
+        Row: {
+          created_at: string
+          event_type_id: string
+          id: string
+          sector: string | null
+          ticker: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          event_type_id: string
+          id?: string
+          sector?: string | null
+          ticker: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          event_type_id?: string
+          id?: string
+          sector?: string | null
+          ticker?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_ticker_map_event_type_id_fkey"
+            columns: ["event_type_id"]
+            isOneToOne: false
+            referencedRelation: "event_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_types: {
+        Row: {
+          created_at: string
+          decay_factor: number
+          default_shock: Json
+          description: string | null
+          half_life_days: number
+          id: string
+          model: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          decay_factor?: number
+          default_shock?: Json
+          description?: string | null
+          half_life_days?: number
+          id?: string
+          model?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          decay_factor?: number
+          default_shock?: Json
+          description?: string | null
+          half_life_days?: number
+          id?: string
+          model?: string
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -889,6 +1249,36 @@ export type Database = {
           id?: string
           log_message?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      hedge_fund_signals: {
+        Row: {
+          action: string | null
+          detected_at: string | null
+          fund_name: string
+          id: number
+          size: number | null
+          source: string | null
+          ticker: string | null
+        }
+        Insert: {
+          action?: string | null
+          detected_at?: string | null
+          fund_name: string
+          id?: number
+          size?: number | null
+          source?: string | null
+          ticker?: string | null
+        }
+        Update: {
+          action?: string | null
+          detected_at?: string | null
+          fund_name?: string
+          id?: number
+          size?: number | null
+          source?: string | null
+          ticker?: string | null
         }
         Relationships: []
       }
@@ -1062,6 +1452,42 @@ export type Database = {
         }
         Relationships: []
       }
+      market_anticipation: {
+        Row: {
+          anticipated_at: string | null
+          anticipation_type: string | null
+          created_at: string | null
+          factor: string
+          id: string
+          notes: string | null
+          priced_in: boolean | null
+          strength: number | null
+          ticker: string | null
+        }
+        Insert: {
+          anticipated_at?: string | null
+          anticipation_type?: string | null
+          created_at?: string | null
+          factor: string
+          id?: string
+          notes?: string | null
+          priced_in?: boolean | null
+          strength?: number | null
+          ticker?: string | null
+        }
+        Update: {
+          anticipated_at?: string | null
+          anticipation_type?: string | null
+          created_at?: string | null
+          factor?: string
+          id?: string
+          notes?: string | null
+          priced_in?: boolean | null
+          strength?: number | null
+          ticker?: string | null
+        }
+        Relationships: []
+      }
       market_data_cache: {
         Row: {
           created_at: string | null
@@ -1080,6 +1506,51 @@ export type Database = {
           data?: Json
           id?: string
           ticker?: string
+        }
+        Relationships: []
+      }
+      market_snapshots: {
+        Row: {
+          adv_dec_line: number | null
+          advancers: number | null
+          asof: string
+          breadth_score: number | null
+          created_at: string | null
+          decliners: number | null
+          id: number
+          put_call_ratio: number | null
+          sector_flows: Json | null
+          vix: number | null
+          volume_down: number | null
+          volume_up: number | null
+        }
+        Insert: {
+          adv_dec_line?: number | null
+          advancers?: number | null
+          asof: string
+          breadth_score?: number | null
+          created_at?: string | null
+          decliners?: number | null
+          id?: number
+          put_call_ratio?: number | null
+          sector_flows?: Json | null
+          vix?: number | null
+          volume_down?: number | null
+          volume_up?: number | null
+        }
+        Update: {
+          adv_dec_line?: number | null
+          advancers?: number | null
+          asof?: string
+          breadth_score?: number | null
+          created_at?: string | null
+          decliners?: number | null
+          id?: number
+          put_call_ratio?: number | null
+          sector_flows?: Json | null
+          vix?: number | null
+          volume_down?: number | null
+          volume_up?: number | null
         }
         Relationships: []
       }
@@ -1115,6 +1586,150 @@ export type Database = {
           url?: string | null
         }
         Relationships: []
+      }
+      news_event_links: {
+        Row: {
+          created_at: string | null
+          event_id: string
+          id: string
+          macro_factor: string | null
+          relation_type: string | null
+          sector: string | null
+          ticker: string | null
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_id: string
+          id?: string
+          macro_factor?: string | null
+          relation_type?: string | null
+          sector?: string | null
+          ticker?: string | null
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          macro_factor?: string | null
+          relation_type?: string | null
+          sector?: string | null
+          ticker?: string | null
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_event_links_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "news_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      news_events: {
+        Row: {
+          body: string | null
+          created_at: string
+          driver_event_id: string | null
+          duplicate_of: string | null
+          event_group: string | null
+          headline: string
+          id: string
+          is_derivative: boolean | null
+          is_duplicate: boolean | null
+          is_macro: boolean | null
+          mention_count: number
+          predicted_confidence: number | null
+          predicted_event_type_id: string | null
+          published_at: string
+          raw_sentiment: number | null
+          retraction_at: string | null
+          sentiment: number | null
+          source: string | null
+          source_quality: number | null
+          tickers: string[] | null
+          unique_hash: string
+          updated_at: string
+          url: string | null
+          verified_source: boolean | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          driver_event_id?: string | null
+          duplicate_of?: string | null
+          event_group?: string | null
+          headline: string
+          id?: string
+          is_derivative?: boolean | null
+          is_duplicate?: boolean | null
+          is_macro?: boolean | null
+          mention_count?: number
+          predicted_confidence?: number | null
+          predicted_event_type_id?: string | null
+          published_at: string
+          raw_sentiment?: number | null
+          retraction_at?: string | null
+          sentiment?: number | null
+          source?: string | null
+          source_quality?: number | null
+          tickers?: string[] | null
+          unique_hash: string
+          updated_at?: string
+          url?: string | null
+          verified_source?: boolean | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          driver_event_id?: string | null
+          duplicate_of?: string | null
+          event_group?: string | null
+          headline?: string
+          id?: string
+          is_derivative?: boolean | null
+          is_duplicate?: boolean | null
+          is_macro?: boolean | null
+          mention_count?: number
+          predicted_confidence?: number | null
+          predicted_event_type_id?: string | null
+          published_at?: string
+          raw_sentiment?: number | null
+          retraction_at?: string | null
+          sentiment?: number | null
+          source?: string | null
+          source_quality?: number | null
+          tickers?: string[] | null
+          unique_hash?: string
+          updated_at?: string
+          url?: string | null
+          verified_source?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_events_driver_event_id_fkey"
+            columns: ["driver_event_id"]
+            isOneToOne: false
+            referencedRelation: "news_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_events_duplicate_of_fkey"
+            columns: ["duplicate_of"]
+            isOneToOne: false
+            referencedRelation: "news_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_events_predicted_event_type_id_fkey"
+            columns: ["predicted_event_type_id"]
+            isOneToOne: false
+            referencedRelation: "event_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       news_watches: {
         Row: {
@@ -1176,6 +1791,123 @@ export type Database = {
         }
         Relationships: []
       }
+      options_flow: {
+        Row: {
+          asof: string
+          call_wall: number | null
+          charm: number | null
+          created_at: string | null
+          crowd_intensity_score: number | null
+          expiry: string | null
+          gamma_flip_price: number | null
+          gex: number | null
+          id: number
+          iv: number | null
+          iv_rank: number | null
+          iv_realized_gap: number | null
+          max_pain: number | null
+          oi_change: number | null
+          open_interest: number | null
+          option_type: string | null
+          put_floor: number | null
+          residual_flow_excess: number | null
+          snapshot_time: string | null
+          source: string | null
+          strike: number | null
+          ticker: string
+          vanna: number | null
+          volume: number | null
+        }
+        Insert: {
+          asof: string
+          call_wall?: number | null
+          charm?: number | null
+          created_at?: string | null
+          crowd_intensity_score?: number | null
+          expiry?: string | null
+          gamma_flip_price?: number | null
+          gex?: number | null
+          id?: number
+          iv?: number | null
+          iv_rank?: number | null
+          iv_realized_gap?: number | null
+          max_pain?: number | null
+          oi_change?: number | null
+          open_interest?: number | null
+          option_type?: string | null
+          put_floor?: number | null
+          residual_flow_excess?: number | null
+          snapshot_time?: string | null
+          source?: string | null
+          strike?: number | null
+          ticker: string
+          vanna?: number | null
+          volume?: number | null
+        }
+        Update: {
+          asof?: string
+          call_wall?: number | null
+          charm?: number | null
+          created_at?: string | null
+          crowd_intensity_score?: number | null
+          expiry?: string | null
+          gamma_flip_price?: number | null
+          gex?: number | null
+          id?: number
+          iv?: number | null
+          iv_rank?: number | null
+          iv_realized_gap?: number | null
+          max_pain?: number | null
+          oi_change?: number | null
+          open_interest?: number | null
+          option_type?: string | null
+          put_floor?: number | null
+          residual_flow_excess?: number | null
+          snapshot_time?: string | null
+          source?: string | null
+          strike?: number | null
+          ticker?: string
+          vanna?: number | null
+          volume?: number | null
+        }
+        Relationships: []
+      }
+      order_flow_tape: {
+        Row: {
+          asof: string
+          created_at: string | null
+          id: number
+          price: number
+          side: string | null
+          size: number
+          ticker: string
+          trade_conditions: string[] | null
+          venue: string | null
+        }
+        Insert: {
+          asof: string
+          created_at?: string | null
+          id?: number
+          price: number
+          side?: string | null
+          size: number
+          ticker: string
+          trade_conditions?: string[] | null
+          venue?: string | null
+        }
+        Update: {
+          asof?: string
+          created_at?: string | null
+          id?: number
+          price?: number
+          side?: string | null
+          size?: number
+          ticker?: string
+          trade_conditions?: string[] | null
+          venue?: string | null
+        }
+        Relationships: []
+      }
       plan_throttles: {
         Row: {
           max_alerts: number
@@ -1197,6 +1929,60 @@ export type Database = {
           plan?: string
           rpd?: number
           rpm?: number
+        }
+        Relationships: []
+      }
+      price_action_levels: {
+        Row: {
+          asof: string
+          buy_walls: Json | null
+          created_at: string | null
+          depth: number | null
+          execution_constraints: Json | null
+          id: number
+          r1: number | null
+          r2: number | null
+          s1: number | null
+          s2: number | null
+          sell_walls: Json | null
+          snapshot_time: string | null
+          ticker: string
+          vacuum_bands: Json | null
+          vwap: number | null
+        }
+        Insert: {
+          asof: string
+          buy_walls?: Json | null
+          created_at?: string | null
+          depth?: number | null
+          execution_constraints?: Json | null
+          id?: number
+          r1?: number | null
+          r2?: number | null
+          s1?: number | null
+          s2?: number | null
+          sell_walls?: Json | null
+          snapshot_time?: string | null
+          ticker: string
+          vacuum_bands?: Json | null
+          vwap?: number | null
+        }
+        Update: {
+          asof?: string
+          buy_walls?: Json | null
+          created_at?: string | null
+          depth?: number | null
+          execution_constraints?: Json | null
+          id?: number
+          r1?: number | null
+          r2?: number | null
+          s1?: number | null
+          s2?: number | null
+          sell_walls?: Json | null
+          snapshot_time?: string | null
+          ticker?: string
+          vacuum_bands?: Json | null
+          vwap?: number | null
         }
         Relationships: []
       }
@@ -1294,6 +2080,7 @@ export type Database = {
           price_worst: number | null
           stock_ticker: string
           updated_at: string | null
+          user_id: string
           year: number
         }
         Insert: {
@@ -1308,6 +2095,7 @@ export type Database = {
           price_worst?: number | null
           stock_ticker: string
           updated_at?: string | null
+          user_id?: string
           year: number
         }
         Update: {
@@ -1322,6 +2110,7 @@ export type Database = {
           price_worst?: number | null
           stock_ticker?: string
           updated_at?: string | null
+          user_id?: string
           year?: number
         }
         Relationships: [
@@ -1625,6 +2414,7 @@ export type Database = {
           condition_text: string | null
           created_at: string | null
           id: string
+          is_global: boolean | null
           symbol: string
           user_id: string | null
         }
@@ -1634,6 +2424,7 @@ export type Database = {
           condition_text?: string | null
           created_at?: string | null
           id?: string
+          is_global?: boolean | null
           symbol: string
           user_id?: string | null
         }
@@ -1643,6 +2434,7 @@ export type Database = {
           condition_text?: string | null
           created_at?: string | null
           id?: string
+          is_global?: boolean | null
           symbol?: string
           user_id?: string | null
         }
@@ -1686,6 +2478,27 @@ export type Database = {
         }
         Update: {
           agreed_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_plans: {
+        Row: {
+          created_at: string | null
+          is_admin: boolean
+          plan: Database["public"]["Enums"]["plan_t"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          is_admin?: boolean
+          plan?: Database["public"]["Enums"]["plan_t"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          is_admin?: boolean
+          plan?: Database["public"]["Enums"]["plan_t"]
           user_id?: string
         }
         Relationships: []
@@ -1902,6 +2715,24 @@ export type Database = {
         }
         Relationships: []
       }
+      current_user_plan: {
+        Row: {
+          is_admin: boolean | null
+          plan: Database["public"]["Enums"]["plan_t"] | null
+          user_id: string | null
+        }
+        Insert: {
+          is_admin?: boolean | null
+          plan?: Database["public"]["Enums"]["plan_t"] | null
+          user_id?: string | null
+        }
+        Update: {
+          is_admin?: boolean | null
+          plan?: Database["public"]["Enums"]["plan_t"] | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_alerts_view: {
         Row: {
           condition: string | null
@@ -1977,6 +2808,14 @@ export type Database = {
       export_logger: {
         Args: { type: string }
         Returns: undefined
+      }
+      f_horizon_days: {
+        Args: { _h: string }
+        Returns: number
+      }
+      f_news_hash: {
+        Args: { _headline: string; _source: string; _ts: string }
+        Returns: string
       }
       flag_set: {
         Args: { _is_enabled: boolean; _key: string; _value?: Json }
@@ -2067,6 +2906,7 @@ export type Database = {
       alert_type_enum: "price" | "volume" | "news" | "technical" | "custom"
       notification_type_enum: "alert_trigger" | "system" | "news"
       plan_enum: "basic" | "premium" | "trial"
+      plan_t: "Free" | "Basic" | "Premium" | "President"
       user_role_enum:
         | "admin"
         | "president"
@@ -2208,6 +3048,7 @@ export const Constants = {
       alert_type_enum: ["price", "volume", "news", "technical", "custom"],
       notification_type_enum: ["alert_trigger", "system", "news"],
       plan_enum: ["basic", "premium", "trial"],
+      plan_t: ["Free", "Basic", "Premium", "President"],
       user_role_enum: [
         "admin",
         "president",

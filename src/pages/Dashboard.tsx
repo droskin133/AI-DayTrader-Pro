@@ -4,6 +4,7 @@ import { TickerTape } from '@/components/layout/TickerTape';
 import { AIMarketAssistant } from '@/components/ai/AIMarketAssistant';
 import { TopMovers } from '@/components/widgets/TopMovers';
 import { NewsWidget } from '@/components/widgets/NewsWidget';
+import { LiveDataFeed } from '@/components/widgets/LiveDataFeed';
 import { FeedbackButton } from '@/components/layout/FeedbackButton';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -33,9 +34,10 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Widgets Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <TopMovers />
             <NewsWidget />
+            <LiveDataFeed />
           </div>
         </div>
         

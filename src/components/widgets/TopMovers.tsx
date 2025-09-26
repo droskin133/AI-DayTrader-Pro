@@ -23,47 +23,72 @@ export const TopMovers: React.FC = () => {
   useEffect(() => {
     const fetchMoversData = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('finnhub-data', {
-          body: {
-            symbol: 'SPY', // Using SPY to get market data
-            interval: '1d',
-            range: {
-              from: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-              to: new Date().toISOString()
-            }
-          }
-        });
+        // Fetch real top movers from equity snapshots
+        const { data: snapshots, error } = await supabase
+          .from('equity_snapshots')
+          .select('*')
+          .order('snapshot_time', { ascending: false })
+          .limit(50);
 
         if (error) throw error;
 
-        // Mock top movers data for demo
-        const mockGainers: MoverData[] = [
-          { symbol: 'NVDA', price: 875.20, change: 52.30, changePercent: 6.35, volume: 45200000 },
-          { symbol: 'TSLA', price: 242.15, change: 11.80, changePercent: 5.12, volume: 32100000 },
-          { symbol: 'META', price: 485.60, change: 18.75, changePercent: 4.01, volume: 18900000 },
-          { symbol: 'GOOGL', price: 175.80, change: 6.20, changePercent: 3.66, volume: 25600000 },
-          { symbol: 'MSFT', price: 415.25, change: 12.15, changePercent: 3.01, volume: 21800000 }
-        ];
+        if (snapshots && snapshots.length > 0) {
+          // Get most recent snapshots by ticker
+          const latestByTicker = new Map();
+          snapshots.forEach(snap => {
+            if (!latestByTicker.has(snap.ticker) || 
+                new Date(snap.snapshot_time) > new Date(latestByTicker.get(snap.ticker).snapshot_time)) {
+              latestByTicker.set(snap.ticker, snap);
+            }
+          });
 
-        const mockLosers: MoverData[] = [
-          { symbol: 'NFLX', price: 485.30, change: -28.40, changePercent: -5.53, volume: 12400000 },
-          { symbol: 'DIS', price: 96.25, change: -4.85, changePercent: -4.80, volume: 15600000 },
-          { symbol: 'PYPL', price: 62.15, change: -2.80, changePercent: -4.31, volume: 9800000 },
-          { symbol: 'UBER', price: 71.40, change: -2.95, changePercent: -3.97, volume: 18200000 },
-          { symbol: 'ZM', price: 68.90, change: -2.65, changePercent: -3.70, volume: 7600000 }
-        ];
+          const recentSnapshots = Array.from(latestByTicker.values());
 
-        const mockVolume: MoverData[] = [
-          { symbol: 'SPY', price: 548.25, change: 2.15, changePercent: 0.39, volume: 125600000 },
-          { symbol: 'QQQ', price: 485.60, change: 4.20, changePercent: 0.87, volume: 89400000 },
-          { symbol: 'AAPL', price: 225.80, change: -1.40, changePercent: -0.62, volume: 78900000 },
-          { symbol: 'NVDA', price: 875.20, change: 52.30, changePercent: 6.35, volume: 45200000 },
-          { symbol: 'AMZN', price: 185.45, change: 3.80, changePercent: 2.09, volume: 42100000 }
-        ];
+          // Sort and categorize
+          const gainers = recentSnapshots
+            .filter(s => s.percent_change > 0)
+            .sort((a, b) => b.percent_change - a.percent_change)
+            .slice(0, 5)
+            .map(s => ({
+              symbol: s.ticker,
+              price: s.price,
+              change: s.price * s.percent_change / 100,
+              changePercent: s.percent_change,
+              volume: s.volume || 0
+            }));
 
-        setGainers(mockGainers);
-        setLosers(mockLosers);
-        setVolume(mockVolume);
+          const losers = recentSnapshots
+            .filter(s => s.percent_change < 0)
+            .sort((a, b) => a.percent_change - b.percent_change)
+            .slice(0, 5)
+            .map(s => ({
+              symbol: s.ticker,
+              price: s.price,
+              change: s.price * s.percent_change / 100,
+              changePercent: s.percent_change,
+              volume: s.volume || 0
+            }));
+
+          const volumeLeaders = recentSnapshots
+            .sort((a, b) => (b.volume || 0) - (a.volume || 0))
+            .slice(0, 5)
+            .map(s => ({
+              symbol: s.ticker,
+              price: s.price,
+              change: s.price * s.percent_change / 100,
+              changePercent: s.percent_change,
+              volume: s.volume || 0
+            }));
+
+          setGainers(gainers);
+          setLosers(losers);
+          setVolume(volumeLeaders);
+        } else {
+          // Fallback empty arrays
+          setGainers([]);
+          setLosers([]);
+          setVolume([]);
+        }
       } catch (error) {
         console.error('Error fetching movers data:', error);
       } finally {

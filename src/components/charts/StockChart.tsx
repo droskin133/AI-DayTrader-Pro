@@ -90,86 +90,27 @@ export const StockChart: React.FC<StockChartProps> = ({ ticker = 'AAPL' }) => {
           close: candle.c,
           high: candle.h,
           low: candle.l,
-          volume: candle.v || Math.floor(Math.random() * 2000000 + 500000),
-          ma20: candle.c * (0.95 + Math.random() * 0.1),
-          ma50: candle.c * (0.93 + Math.random() * 0.14),
-          ma200: candle.c * (0.90 + Math.random() * 0.20),
-          bollinger_upper: candle.c * 1.02,
-          bollinger_lower: candle.c * 0.98,
-          rsi: 30 + Math.random() * 40,
-          macd: (Math.random() - 0.5) * 2
+          volume: candle.v || 0, // Use real volume or 0
+          ma20: 0, // Will be calculated from real data
+          ma50: 0, // Will be calculated from real data  
+          ma200: 0, // Will be calculated from real data
+          bollinger_upper: 0, // Will be calculated from real data
+          bollinger_lower: 0, // Will be calculated from real data
+          rsi: 0, // Will be calculated from real data
+          macd: 0 // Will be calculated from real data
         }));
         
         setChartData(transformedData);
       } else {
-        generateInitialData(); // Fallback to mock data
+        setChartData([]); // No fallback to mock data - show empty state
       }
     } catch (error) {
       console.error('Error fetching chart data:', error);
-      generateInitialData(); // Fallback to mock data
+      setChartData([]); // No fallback to mock data - show empty state
     }
   };
 
-  const generateInitialData = () => {
-    const dataPoints = timeframe === '1D' ? 100 : timeframe === '1W' ? 140 : 252;
-    const basePrice = 150 + Math.random() * 100;
-    const data: ChartDataPoint[] = [];
-    
-    let currentPrice = basePrice;
-    const now = new Date();
-    
-    for (let i = dataPoints; i >= 0; i--) {
-      const timestamp = new Date(now.getTime() - i * (timeframe === '1D' ? 5 * 60 * 1000 : 24 * 60 * 60 * 1000));
-      
-      // Simulate realistic price movement
-      const volatility = 0.02;
-      const drift = 0.0001;
-      const change = (Math.random() - 0.5) * volatility + drift;
-      currentPrice = currentPrice * (1 + change);
-      
-      const high = currentPrice * (1 + Math.random() * 0.01);
-      const low = currentPrice * (1 - Math.random() * 0.01);
-      const volume = Math.floor(Math.random() * 2000000 + 500000);
-      
-      // Calculate moving averages
-      const ma20 = currentPrice * (0.95 + Math.random() * 0.1);
-      const ma50 = currentPrice * (0.93 + Math.random() * 0.14);
-      const ma200 = currentPrice * (0.90 + Math.random() * 0.20);
-      
-      // Calculate Bollinger Bands
-      const stdDev = currentPrice * 0.02;
-      const bollinger_upper = ma20 + (2 * stdDev);
-      const bollinger_lower = ma20 - (2 * stdDev);
-      
-      // Calculate RSI (simplified)
-      const rsi = 30 + Math.random() * 40;
-      
-      // Calculate MACD (simplified)
-      const macd = (Math.random() - 0.5) * 2;
-      
-      data.push({
-        time: timeframe === '1D' 
-          ? timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-          : timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        timestamp: timestamp.getTime(),
-        price: currentPrice,
-        open: currentPrice * (0.99 + Math.random() * 0.02),
-        close: currentPrice,
-        high,
-        low,
-        volume,
-        ma20,
-        ma50,
-        ma200,
-        bollinger_upper,
-        bollinger_lower,
-        rsi,
-        macd
-      });
-    }
-    
-    setChartData(data);
-  };
+  // Removed generateInitialData function - no more mock data
 
   const updateRealTimeData = () => {
     setChartData(prevData => {

@@ -27,7 +27,15 @@ export type Database = {
           created_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "admin_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       ai_auto_flags: {
         Row: {
@@ -60,7 +68,15 @@ export type Database = {
           symbol?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_auto_flags_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       ai_auto_generated_alerts: {
         Row: {
@@ -90,7 +106,15 @@ export type Database = {
           trigger_context?: Json | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_auto_generated_alerts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       ai_autoscan_results: {
         Row: {
@@ -174,7 +198,15 @@ export type Database = {
           user_id?: string
           value?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_configs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       ai_feedback: {
         Row: {
@@ -207,7 +239,15 @@ export type Database = {
           thumbs_up?: boolean | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       ai_global_knowledge: {
         Row: {
@@ -339,7 +379,15 @@ export type Database = {
           user_id?: string
           win_rate?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_performance_daily_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       ai_run_metrics: {
         Row: {
@@ -375,7 +423,15 @@ export type Database = {
           used_cache?: boolean | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_run_metrics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       ai_suggestion_scores: {
         Row: {
@@ -405,7 +461,15 @@ export type Database = {
           suggestion?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_suggestion_scores_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       alert_events: {
         Row: {
@@ -552,7 +616,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "alerts_owner_fkey"
+            columns: ["owner"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       alerts_fired: {
         Row: {
@@ -593,6 +665,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_alerts_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alerts_fired_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -666,7 +745,15 @@ export type Database = {
           request_count?: number | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "api_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       audit_log: {
         Row: {
@@ -791,7 +878,15 @@ export type Database = {
           status?: string
           strategy?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "backtests_owner_fkey"
+            columns: ["owner"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       billing_accounts: {
         Row: {
@@ -818,7 +913,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "billing_accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       commodity_equity_map: {
         Row: {
@@ -917,7 +1020,15 @@ export type Database = {
           last_active?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "device_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       drivers: {
         Row: {
@@ -979,6 +1090,36 @@ export type Database = {
           snapshot_time?: string | null
           ticker?: string
           volume?: number | null
+        }
+        Relationships: []
+      }
+      error_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string
+          function_name: string
+          id: string
+          metadata: Json | null
+          request_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message: string
+          function_name: string
+          id?: string
+          metadata?: Json | null
+          request_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string
+          function_name?: string
+          id?: string
+          metadata?: Json | null
+          request_id?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1148,7 +1289,15 @@ export type Database = {
           table_exported?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "export_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       export_requests: {
         Row: {
@@ -1178,7 +1327,15 @@ export type Database = {
           status?: string
           token?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "export_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       feature_flags: {
         Row: {
@@ -1226,7 +1383,15 @@ export type Database = {
           page?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       function_logs: {
         Row: {
@@ -1392,6 +1557,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "legal_texts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_acceptances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2065,7 +2237,15 @@ export type Database = {
           title?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "push_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       scenarios: {
         Row: {
@@ -2120,6 +2300,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "drivers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scenarios_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2194,12 +2381,24 @@ export type Database = {
       }
       sp500: {
         Row: {
+          added_at: string | null
+          market_cap: number | null
+          name: string | null
+          sector: string | null
           ticker: string
         }
         Insert: {
+          added_at?: string | null
+          market_cap?: number | null
+          name?: string | null
+          sector?: string | null
           ticker: string
         }
         Update: {
+          added_at?: string | null
+          market_cap?: number | null
+          name?: string | null
+          sector?: string | null
           ticker?: string
         }
         Relationships: []
@@ -2370,7 +2569,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_ai_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_alert_audit_log: {
         Row: {
@@ -2405,6 +2612,13 @@ export type Database = {
             referencedRelation: "user_alerts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_alert_audit_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       user_alerts: {
@@ -2438,7 +2652,15 @@ export type Database = {
           symbol?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_alerts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_event_log: {
         Row: {
@@ -2465,7 +2687,15 @@ export type Database = {
           timestamp?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_event_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_legal_acceptance: {
         Row: {
@@ -2480,7 +2710,15 @@ export type Database = {
           agreed_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_legal_acceptance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_plans: {
         Row: {
@@ -2501,7 +2739,15 @@ export type Database = {
           plan?: Database["public"]["Enums"]["plan_t"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_plans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_profiles: {
         Row: {
@@ -2522,7 +2768,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_settings: {
         Row: {
@@ -2660,7 +2914,15 @@ export type Database = {
           name?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "watchlist_tags_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       widget_layouts: {
         Row: {
@@ -2721,16 +2983,6 @@ export type Database = {
           plan: Database["public"]["Enums"]["plan_t"] | null
           user_id: string | null
         }
-        Insert: {
-          is_admin?: boolean | null
-          plan?: Database["public"]["Enums"]["plan_t"] | null
-          user_id?: string | null
-        }
-        Update: {
-          is_admin?: boolean | null
-          plan?: Database["public"]["Enums"]["plan_t"] | null
-          user_id?: string | null
-        }
         Relationships: []
       }
       user_alerts_view: {
@@ -2773,7 +3025,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "alerts_owner_fkey"
+            columns: ["owner"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
     }
     Functions: {
@@ -2790,7 +3050,9 @@ export type Database = {
         Returns: undefined
       }
       audit_write: {
-        Args: { _action: string; _meta?: Json; _target: string }
+        Args:
+          | { _action: string; _meta?: Json; _target: string }
+          | { _action: string; _meta?: Json; _target: string }
         Returns: undefined
       }
       autonomous_ai_scan: {
@@ -2808,14 +3070,6 @@ export type Database = {
       export_logger: {
         Args: { type: string }
         Returns: undefined
-      }
-      f_horizon_days: {
-        Args: { _h: string }
-        Returns: number
-      }
-      f_news_hash: {
-        Args: { _headline: string; _source: string; _ts: string }
-        Returns: string
       }
       flag_set: {
         Args: { _is_enabled: boolean; _key: string; _value?: Json }

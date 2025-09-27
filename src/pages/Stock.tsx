@@ -20,6 +20,7 @@ import { SECFilings } from '@/components/stock/SECFilings';
 import { InsiderTrades } from '@/components/stock/InsiderTrades';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { ProductionStockData } from '@/components/production/ProductionStockData';
 
 const Stock: React.FC = () => {
   const { ticker } = useParams<{ ticker: string }>();
@@ -68,22 +69,18 @@ const Stock: React.FC = () => {
       setLivePrice(price);
       
       if (price) {
-        // Calculate realistic market data based on live price
-        const change = (price * 0.98) - price; // Mock 2% down for demo
-        const changePercent = (change / price) * 100;
-        
         setStockData({
           symbol: symbol,
           price: price,
-          change: change,
-          changePercent: changePercent,
-          volume: Math.floor(Math.random() * 50000000),
-          marketCap: price > 200 ? '2.8T' : price > 100 ? '1.2T' : '500B',
-          pe: 28.5,
-          dayHigh: price * 1.02,
-          dayLow: price * 0.98,
-          yearHigh: price * 1.4,
-          yearLow: price * 0.7
+          change: 0, // Will be calculated from real market data
+          changePercent: 0, // Will be calculated from real market data
+          volume: 0, // Will be fetched from equity_snapshots
+          marketCap: 'N/A', // Will be calculated from real data
+          pe: 0, // Will be fetched from financial data
+          dayHigh: 0, // Will be fetched from real data
+          dayLow: 0, // Will be fetched from real data
+          yearHigh: 0, // Will be fetched from real data
+          yearLow: 0 // Will be fetched from real data
         });
       }
     } catch (error) {
@@ -193,43 +190,7 @@ const Stock: React.FC = () => {
           <div className="lg:col-span-2 space-y-6">
             <StockChart ticker={ticker} />
             
-            {/* Quick Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Market Data</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {[...Array(4)].map((_, i) => (
-                      <div key={i}>
-                        <Skeleton className="h-4 w-16 mb-1" />
-                        <Skeleton className="h-5 w-20" />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Volume</p>
-                      <p className="font-semibold">{stockData.volume.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Market Cap</p>
-                      <p className="font-semibold">{stockData.marketCap}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">P/E Ratio</p>
-                      <p className="font-semibold">{stockData.pe}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">52W Range</p>
-                      <p className="font-semibold">${stockData.yearLow?.toFixed(2)} - ${stockData.yearHigh?.toFixed(2)}</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <ProductionStockData ticker={ticker!} />
           </div>
 
           {/* Right Column - Analysis & Data */}

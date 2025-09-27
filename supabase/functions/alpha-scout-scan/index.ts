@@ -105,7 +105,7 @@ serve(async (req) => {
       JSON.stringify({ 
         candidates, 
         scan_type,
-        alerts_created: candidates.filter(c => c.score > 70).length
+        alerts_created: candidates.filter((c: any) => c.score > 70).length
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

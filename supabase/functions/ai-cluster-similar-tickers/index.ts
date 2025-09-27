@@ -94,7 +94,7 @@ serve(async (req) => {
               user_id,
               symbol: ticker,
               event_type: 'clustered_pair',
-              explanation: `Clustered with: ${cluster.filter(t => t !== ticker).join(', ')}`,
+              explanation: `Clustered with: ${cluster.filter((t: string) => t !== ticker).join(', ')}`,
               risk_score: 0,
               metadata: { 
                 cluster_members: cluster,

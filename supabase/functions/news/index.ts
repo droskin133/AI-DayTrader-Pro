@@ -117,7 +117,7 @@ serve(async (req) => {
     // Log error to audit_logs
     await supabase.from('audit_logs').insert({
       function_name: 'news',
-      error_message: error.message,
+      error_message: (error as Error).message,
       request_id: requestId,
       payload_hash: 'error',
       upstream_status: 500,

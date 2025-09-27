@@ -35,7 +35,7 @@ serve(async (req) => {
       );
     } catch (err) {
       console.error('Webhook signature verification failed:', err);
-      return new Response(`Webhook Error: ${err.message}`, { 
+      return new Response(`Webhook Error: ${(err as Error).message}`, { 
         status: 400,
         headers: corsHeaders 
       });
@@ -84,7 +84,7 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Webhook processing error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

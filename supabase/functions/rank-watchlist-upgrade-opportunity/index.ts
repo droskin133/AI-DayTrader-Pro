@@ -80,7 +80,7 @@ serve(async (req) => {
     }
 
     // Insert flags for high-opportunity tickers
-    const highOpportunityTickers = rankings.filter(r => r.opportunity_score > 75);
+    const highOpportunityTickers = rankings.filter((r: any) => r.opportunity_score > 75);
     
     for (const ticker of highOpportunityTickers) {
       await supabase

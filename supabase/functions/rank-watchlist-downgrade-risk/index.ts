@@ -80,7 +80,7 @@ serve(async (req) => {
     }
 
     // Insert flags for high-risk tickers
-    const highRiskTickers = rankings.filter(r => r.risk_score > 70);
+    const highRiskTickers = rankings.filter((r: any) => r.risk_score > 70);
     
     for (const ticker of highRiskTickers) {
       await supabase

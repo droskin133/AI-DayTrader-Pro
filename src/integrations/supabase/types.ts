@@ -675,6 +675,33 @@ export type Database = {
           },
         ]
       }
+      analyst_targets: {
+        Row: {
+          as_of_date: string | null
+          id: number
+          symbol: string
+          target_avg: number | null
+          target_high: number | null
+          target_low: number | null
+        }
+        Insert: {
+          as_of_date?: string | null
+          id?: number
+          symbol: string
+          target_avg?: number | null
+          target_high?: number | null
+          target_low?: number | null
+        }
+        Update: {
+          as_of_date?: string | null
+          id?: number
+          symbol?: string
+          target_avg?: number | null
+          target_high?: number | null
+          target_low?: number | null
+        }
+        Relationships: []
+      }
       annotations: {
         Row: {
           at: string
@@ -1063,6 +1090,27 @@ export type Database = {
           source_url?: string | null
           stock_ticker?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      earnings_calendar: {
+        Row: {
+          event_date: string
+          event_type: string | null
+          id: number
+          symbol: string
+        }
+        Insert: {
+          event_date: string
+          event_type?: string | null
+          id?: number
+          symbol: string
+        }
+        Update: {
+          event_date?: string
+          event_type?: string | null
+          id?: number
+          symbol?: string
         }
         Relationships: []
       }
@@ -1465,6 +1513,39 @@ export type Database = {
           id?: string
           target_user?: string
           timestamp?: string | null
+        }
+        Relationships: []
+      }
+      insider_transactions: {
+        Row: {
+          amount: number | null
+          filed_at: string | null
+          id: number
+          officer: string | null
+          price: number | null
+          shares: number | null
+          symbol: string
+          transaction_type: string | null
+        }
+        Insert: {
+          amount?: number | null
+          filed_at?: string | null
+          id?: number
+          officer?: string | null
+          price?: number | null
+          shares?: number | null
+          symbol: string
+          transaction_type?: string | null
+        }
+        Update: {
+          amount?: number | null
+          filed_at?: string | null
+          id?: number
+          officer?: string | null
+          price?: number | null
+          shares?: number | null
+          symbol?: string
+          transaction_type?: string | null
         }
         Relationships: []
       }
@@ -3074,6 +3155,13 @@ export type Database = {
       }
       audit_write: {
         Args:
+          | {
+              _action: string
+              _actor: string
+              _payload: Json
+              _record: string
+              _table: string
+            }
           | { _action: string; _meta?: Json; _target: string }
           | { _action: string; _meta?: Json; _target: string }
         Returns: undefined

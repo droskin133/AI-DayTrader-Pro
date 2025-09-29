@@ -2979,7 +2979,6 @@ export type Database = {
       }
       current_user_plan: {
         Row: {
-          is_admin: boolean | null
           plan: Database["public"]["Enums"]["plan_t"] | null
           user_id: string | null
         }

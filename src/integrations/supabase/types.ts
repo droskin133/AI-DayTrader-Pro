@@ -2924,6 +2924,30 @@ export type Database = {
           },
         ]
       }
+      watchlists: {
+        Row: {
+          created_at: string | null
+          id: number
+          symbol: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          symbol: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          symbol?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       widget_layouts: {
         Row: {
           id: string

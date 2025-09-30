@@ -2328,6 +2328,33 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          bucket: string
+          count: number
+          id: number
+          user_id: string | null
+          window_seconds: number
+          window_start: string | null
+        }
+        Insert: {
+          bucket: string
+          count?: number
+          id?: number
+          user_id?: string | null
+          window_seconds: number
+          window_start?: string | null
+        }
+        Update: {
+          bucket?: string
+          count?: number
+          id?: number
+          user_id?: string | null
+          window_seconds?: number
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       scenarios: {
         Row: {
           created_at: string | null
@@ -3089,6 +3116,13 @@ export type Database = {
         }
         Relationships: []
       }
+      export_my_data: {
+        Row: {
+          row: Json | null
+          table_name: string | null
+        }
+        Relationships: []
+      }
       user_alerts_view: {
         Row: {
           condition: string | null
@@ -3170,6 +3204,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      delete_my_data: {
+        Args: { p_user: string }
+        Returns: undefined
+      }
       expire_alerts: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -3189,6 +3227,12 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      increment_rate_limit: {
+        Args: { p_bucket: string; p_user_id: string; p_window_seconds: number }
+        Returns: {
+          count: number
+        }[]
       }
       legal_acceptance: {
         Args: Record<PropertyKey, never>

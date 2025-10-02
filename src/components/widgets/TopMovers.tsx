@@ -84,7 +84,7 @@ export const TopMovers: React.FC = () => {
           setLosers(losers);
           setVolume(volumeLeaders);
         } else {
-          // Fallback empty arrays
+          // ⚠️ NO FALLBACK - Show empty state
           setGainers([]);
           setLosers([]);
           setVolume([]);
@@ -106,43 +106,55 @@ export const TopMovers: React.FC = () => {
     navigate(`/stock/${symbol}`);
   };
 
-  const MoversList = ({ data, type }: { data: MoverData[]; type: 'gainers' | 'losers' | 'volume' }) => (
-    <div className="space-y-2">
-      {data.map((item) => (
-        <div
-          key={item.symbol}
-          className="flex items-center justify-between p-2 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
-          onClick={() => handleTickerClick(item.symbol)}
-        >
-          <div className="flex items-center space-x-3">
-            <span className="font-medium">{item.symbol}</span>
-            <span className="text-sm text-muted-foreground">${item.price.toFixed(2)}</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            {type === 'volume' ? (
-              <>
-                <Volume2 className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">{(item.volume / 1000000).toFixed(1)}M</span>
-              </>
-            ) : (
-              <>
-                {item.changePercent >= 0 ? (
-                  <TrendingUp className="h-4 w-4 text-bull" />
-                ) : (
-                  <TrendingDown className="h-4 w-4 text-bear" />
-                )}
-                <span className={`text-sm font-medium ${
-                  item.changePercent >= 0 ? 'text-bull' : 'text-bear'
-                }`}>
-                  {item.changePercent >= 0 ? '+' : ''}{item.changePercent.toFixed(2)}%
-                </span>
-              </>
-            )}
-          </div>
+  const MoversList = ({ data, type }: { data: MoverData[]; type: 'gainers' | 'losers' | 'volume' }) => {
+    if (data.length === 0) {
+      return (
+        <div className="text-center py-6 text-muted-foreground">
+          <TrendingUp className="h-10 w-10 mx-auto mb-2 opacity-40" />
+          <p className="text-sm">No live data available</p>
+          <p className="text-xs mt-1">Market data will appear here</p>
         </div>
-      ))}
-    </div>
-  );
+      );
+    }
+    
+    return (
+      <div className="space-y-2">
+        {data.map((item) => (
+          <div
+            key={item.symbol}
+            className="flex items-center justify-between p-2 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
+            onClick={() => handleTickerClick(item.symbol)}
+          >
+            <div className="flex items-center space-x-3">
+              <span className="font-medium">{item.symbol}</span>
+              <span className="text-sm text-muted-foreground">${item.price.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              {type === 'volume' ? (
+                <>
+                  <Volume2 className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">{(item.volume / 1000000).toFixed(1)}M</span>
+                </>
+              ) : (
+                <>
+                  {item.changePercent >= 0 ? (
+                    <TrendingUp className="h-4 w-4 text-bull" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 text-bear" />
+                  )}
+                  <span className={`text-sm font-medium ${
+                    item.changePercent >= 0 ? 'text-bull' : 'text-bear'
+                  }`}>
+                    {item.changePercent >= 0 ? '+' : ''}{item.changePercent.toFixed(2)}%
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   if (loading) {
     return (

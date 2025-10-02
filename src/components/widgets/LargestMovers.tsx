@@ -42,17 +42,9 @@ export const LargestMovers: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching market movers:', error);
-      // Fallback data
-      setWinners([
-        { ticker: 'NVDA', price: 875.32, change: 45.67, changePercent: 5.5, volume: 45234567 },
-        { ticker: 'AAPL', price: 175.43, change: 7.21, changePercent: 4.3, volume: 32145879 },
-        { ticker: 'GOOGL', price: 2654.78, change: 89.45, changePercent: 3.5, volume: 18976543 },
-      ]);
-      setLosers([
-        { ticker: 'TSLA', price: 198.76, change: -12.45, changePercent: -5.9, volume: 67543219 },
-        { ticker: 'META', price: 298.54, change: -15.67, changePercent: -5.0, volume: 29876543 },
-        { ticker: 'NFLX', price: 445.32, change: -18.23, changePercent: -3.9, volume: 15432178 },
-      ]);
+      // ⚠️ NO FALLBACK DATA - Display empty state
+      setWinners([]);
+      setLosers([]);
     } finally {
       setLoading(false);
     }
@@ -65,38 +57,50 @@ export const LargestMovers: React.FC = () => {
     return `${(volume / 1000).toFixed(0)}K`;
   };
 
-  const MoversList = ({ movers, type }: { movers: Mover[], type: 'winners' | 'losers' }) => (
-    <div className="space-y-2">
-      {movers.map((mover, index) => (
-        <div key={mover.ticker} className="flex items-center justify-between p-2 hover:bg-muted rounded-lg transition-colors cursor-pointer">
-          <div className="flex items-center space-x-3">
-            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">
-              {index + 1}
+  const MoversList = ({ movers, type }: { movers: Mover[], type: 'winners' | 'losers' }) => {
+    if (movers.length === 0) {
+      return (
+        <div className="text-center py-6 text-muted-foreground">
+          <TrendingUp className="h-10 w-10 mx-auto mb-2 opacity-40" />
+          <p className="text-sm">No live data available</p>
+          <p className="text-xs mt-1">Market mover data will appear here</p>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="space-y-2">
+        {movers.map((mover, index) => (
+          <div key={mover.ticker} className="flex items-center justify-between p-2 hover:bg-muted rounded-lg transition-colors cursor-pointer">
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">
+                {index + 1}
+              </div>
+              <div>
+                <div className="font-medium">{mover.ticker}</div>
+                <div className="text-xs text-muted-foreground">
+                  Vol: {formatVolume(mover.volume)}
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="font-medium">{mover.ticker}</div>
-              <div className="text-xs text-muted-foreground">
-                Vol: {formatVolume(mover.volume)}
+            <div className="text-right">
+              <div className="font-medium">${mover.price.toFixed(2)}</div>
+              <div className={`text-xs flex items-center ${
+                type === 'winners' ? 'text-bull' : 'text-bear'
+              }`}>
+                {type === 'winners' ? (
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                ) : (
+                  <TrendingDown className="h-3 w-3 mr-1" />
+                )}
+                {type === 'winners' ? '+' : ''}{mover.changePercent.toFixed(1)}%
               </div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="font-medium">${mover.price.toFixed(2)}</div>
-            <div className={`text-xs flex items-center ${
-              type === 'winners' ? 'text-bull' : 'text-bear'
-            }`}>
-              {type === 'winners' ? (
-                <TrendingUp className="h-3 w-3 mr-1" />
-              ) : (
-                <TrendingDown className="h-3 w-3 mr-1" />
-              )}
-              {type === 'winners' ? '+' : ''}{mover.changePercent.toFixed(1)}%
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+        ))}
+      </div>
+    );
+  };
 
   return (
     <Card className="widget-container">

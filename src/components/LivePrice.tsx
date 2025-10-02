@@ -40,6 +40,7 @@ export default function LivePrice({ symbol, className = "" }: LivePriceProps) {
     return '';
   };
 
+  // ⚠️ Display only live data - show loading until real data arrives
   if (loading) {
     return (
       <div className={`animate-pulse ${className}`}>

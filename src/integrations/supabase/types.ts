@@ -2161,6 +2161,30 @@ export type Database = {
         }
         Relationships: []
       }
+      ownership_data: {
+        Row: {
+          id: string
+          last_updated: string | null
+          owner: string
+          pct_owned: number | null
+          ticker: string
+        }
+        Insert: {
+          id?: string
+          last_updated?: string | null
+          owner: string
+          pct_owned?: number | null
+          ticker: string
+        }
+        Update: {
+          id?: string
+          last_updated?: string | null
+          owner?: string
+          pct_owned?: number | null
+          ticker?: string
+        }
+        Relationships: []
+      }
       plan_throttles: {
         Row: {
           max_alerts: number
@@ -2547,6 +2571,27 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_prices: {
+        Row: {
+          id: string
+          price: number
+          ticker: string
+          ts: string
+        }
+        Insert: {
+          id?: string
+          price: number
+          ticker: string
+          ts: string
+        }
+        Update: {
+          id?: string
+          price?: number
+          ticker?: string
+          ts?: string
+        }
+        Relationships: []
+      }
       stocks: {
         Row: {
           company_name: string | null
@@ -2564,6 +2609,76 @@ export type Database = {
           symbol?: string
         }
         Relationships: []
+      }
+      stripe_events: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          payload: Json
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          payload: Json
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      subscription_status: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          plan: string
+          renewed_at: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          plan: string
+          renewed_at?: string | null
+          status: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          plan?: string
+          renewed_at?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_status_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "current_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {

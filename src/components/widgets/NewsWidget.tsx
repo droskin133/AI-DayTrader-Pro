@@ -3,9 +3,7 @@ import { Newspaper, ExternalLink, Clock, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { NewsItemWithAI } from '@/components/news/NewsItemWithAI';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface NewsItem {
   id: string;
@@ -16,10 +14,14 @@ interface NewsItem {
   sentiment: 'positive' | 'negative' | 'neutral';
 }
 
+/**
+ * NewsWidget Component
+ * ⚠️ LIVE DATA ONLY - No fallback/dummy data
+ * Displays loading state until real news arrives
+ */
 export const NewsWidget: React.FC = () => {
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
 
   useEffect(() => {
     fetchNews();
@@ -41,42 +43,6 @@ export const NewsWidget: React.FC = () => {
       setLoading(false);
     }
   };
-
-  // Fallback data
-  const fallbackNews: NewsItem[] = [
-    {
-      id: '1',
-      title: 'Fed Signals Rate Cuts Amid Economic Uncertainty',
-      source: 'Reuters',
-      publishedAt: '2024-01-15T10:30:00Z',
-      tickers: ['SPY', 'QQQ'],
-      sentiment: 'neutral'
-    },
-    {
-      id: '2',
-      title: 'Apple Beats Q4 Earnings Expectations',
-      source: 'Bloomberg',
-      publishedAt: '2024-01-15T09:15:00Z',
-      tickers: ['AAPL'],
-      sentiment: 'positive'
-    },
-    {
-      id: '3',
-      title: 'Tesla Production Concerns Weigh on Stock',
-      source: 'CNBC',
-      publishedAt: '2024-01-15T08:45:00Z',
-      tickers: ['TSLA'],
-      sentiment: 'negative'
-    },
-    {
-      id: '4',
-      title: 'AI Chip Demand Drives Semiconductor Rally',
-      source: 'MarketWatch',
-      publishedAt: '2024-01-15T08:00:00Z',
-      tickers: ['NVDA', 'AMD'],
-      sentiment: 'positive'
-    }
-  ];
 
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment) {
@@ -116,49 +82,68 @@ export const NewsWidget: React.FC = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
-          {newsItems.map((item) => (
-            <div key={item.id} className="p-3 hover:bg-muted rounded-lg transition-colors cursor-pointer">
-              <div className="flex items-start justify-between mb-2">
-                <h4 className="text-sm font-medium line-clamp-2 flex-1">
-                  {item.title}
-                </h4>
-                <div className={`w-2 h-2 rounded-full ml-2 mt-1 ${
-                  item.sentiment === 'positive' ? 'bg-bull' :
-                  item.sentiment === 'negative' ? 'bg-bear' : 'bg-neutral'
-                }`} />
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse space-y-2 p-3">
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+                <div className="h-3 bg-muted rounded w-1/2"></div>
               </div>
-              
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <div className="flex items-center space-x-2">
-                  <span>{item.source}</span>
-                  <div className="flex items-center">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {formatTime(item.publishedAt)}
+            ))}
+          </div>
+        ) : newsItems.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Newspaper className="h-12 w-12 mx-auto mb-3 opacity-40" />
+            <p className="font-medium">No live news available</p>
+            <p className="text-sm mt-1">Live market news will appear here</p>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
+              {newsItems.map((item) => (
+                <div key={item.id} className="p-3 hover:bg-muted rounded-lg transition-colors cursor-pointer">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="text-sm font-medium line-clamp-2 flex-1">
+                      {item.title}
+                    </h4>
+                    <div className={`w-2 h-2 rounded-full ml-2 mt-1 ${
+                      item.sentiment === 'positive' ? 'bg-bull' :
+                      item.sentiment === 'negative' ? 'bg-bear' : 'bg-neutral'
+                    }`} />
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center space-x-2">
+                      <span>{item.source}</span>
+                      <div className="flex items-center">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {formatTime(item.publishedAt)}
+                      </div>
+                    </div>
+                    <div className="flex space-x-1">
+                      {item.tickers.slice(0, 2).map((ticker) => (
+                        <Badge key={ticker} variant="outline" className="text-xs px-1 py-0">
+                          {ticker}
+                        </Badge>
+                      ))}
+                      {item.tickers.length > 2 && (
+                        <Badge variant="outline" className="text-xs px-1 py-0">
+                          +{item.tickers.length - 2}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className="flex space-x-1">
-                  {item.tickers.slice(0, 2).map((ticker) => (
-                    <Badge key={ticker} variant="outline" className="text-xs px-1 py-0">
-                      {ticker}
-                    </Badge>
-                  ))}
-                  {item.tickers.length > 2 && (
-                    <Badge variant="outline" className="text-xs px-1 py-0">
-                      +{item.tickers.length - 2}
-                    </Badge>
-                  )}
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-        
-        <div className="mt-3 pt-3 border-t">
-          <Button variant="outline" size="sm" className="w-full" asChild>
-            <a href="/news">View All News</a>
-          </Button>
-        </div>
+            
+            <div className="mt-3 pt-3 border-t">
+              <Button variant="outline" size="sm" className="w-full" asChild>
+                <a href="/news">View All News</a>
+              </Button>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );

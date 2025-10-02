@@ -17,3 +17,12 @@ verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.polygon-data]
+verify_jwt = false
+
+[functions.quiver-data]
+verify_jwt = false
+
+[functions.live-stock-price]
+verify_jwt = false

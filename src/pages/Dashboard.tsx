@@ -4,7 +4,7 @@ import { TickerTape } from '@/components/layout/TickerTape';
 import { AIMarketAssistant } from '@/components/ai/AIMarketAssistant';
 import { TopMovers } from '@/components/widgets/TopMovers';
 import { NewsWidget } from '@/components/widgets/NewsWidget';
-import { LiveDataFeed } from '@/components/widgets/LiveDataFeed';
+import { WatchlistWidget } from '@/components/widgets/WatchlistWidget';
 import { FeedbackButton } from '@/components/layout/FeedbackButton';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -26,18 +26,18 @@ const Dashboard: React.FC = () => {
             </p>
           </div>
 
-          {/* AI Market Assistant - Centerpiece */}
-          <div className="flex justify-center mb-8">
-            <div className="w-full max-w-2xl">
-              <AIMarketAssistant />
-            </div>
+          <div className="max-w-3xl mx-auto">
+            <AIMarketAssistant />
           </div>
 
-          {/* Widgets Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <TopMovers />
-            <NewsWidget />
-            <LiveDataFeed />
+            <div className="lg:col-span-2 space-y-6">
+              <WatchlistWidget />
+              <TopMovers />
+            </div>
+            <div className="lg:col-span-1">
+              <NewsWidget />
+            </div>
           </div>
         </div>
         

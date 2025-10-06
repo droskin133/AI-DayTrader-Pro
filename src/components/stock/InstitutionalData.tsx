@@ -1,60 +1,40 @@
-import React, { useState } from 'react';
-import { Building, Users, Scale, RefreshCw } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Building, Users, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/integrations/supabase/client';
 
-interface InstitutionalDataProps {
-  ticker?: string;
-}
+interface Holder { name: string; percentage?: number; }
+interface CongressTrade { date: string; member: string; action: string; amount?: string; party?: string; }
+interface Insider { date: string; insider: string; action: string; shares?: number; value?: number; }
 
-export const InstitutionalData: React.FC<InstitutionalDataProps> = ({ ticker = 'AAPL' }) => {
+export const InstitutionalData: React.FC<{ ticker?: string }> = ({ ticker = 'AAPL' }) => {
   const [loading, setLoading] = useState(false);
+  const [ownership, setOwnership] = useState<number | null>(null);
+  const [topHolders, setTopHolders] = useState<Holder[]>([]);
+  const [congressTrades, setCongressTrades] = useState<CongressTrade[]>([]);
+  const [insiderTrades, setInsiderTrades] = useState<Insider[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock institutional data
-  const institutionalData = {
-    ownership: 62.5,
-    topHolders: [
-      { name: 'Berkshire Hathaway', percentage: 5.8, shares: 915000000, change: 0.2 },
-      { name: 'Vanguard Group', percentage: 8.2, shares: 1295000000, change: 0.1 },
-      { name: 'BlackRock', percentage: 6.4, shares: 1010000000, change: -0.1 },
-      { name: 'State Street', percentage: 4.1, shares: 647000000, change: 0.3 }
-    ],
-    congressTrades: [
-      { date: '2024-01-12', member: 'Rep. Johnson', action: 'BUY', amount: '$50K-$100K', party: 'R' },
-      { date: '2024-01-10', member: 'Sen. Williams', action: 'SELL', amount: '$15K-$50K', party: 'D' },
-      { date: '2024-01-08', member: 'Rep. Davis', action: 'BUY', amount: '$100K-$250K', party: 'D' }
-    ],
-    insiderTrades: [
-      { date: '2024-01-14', insider: 'CEO Tim Cook', action: 'SELL', shares: 223000, value: 39100000 },
-      { date: '2024-01-12', insider: 'CFO Luca Maestri', action: 'SELL', shares: 89000, value: 15600000 },
-      { date: '2024-01-10', insider: 'SVP Katherine Adams', action: 'SELL', shares: 34000, value: 5950000 }
-    ]
+  const load = async () => {
+    setLoading(true); setError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('quiver-data', { body: { type: 'institutional', ticker } });
+      if (error) throw error;
+      setOwnership(data?.ownershipPct ?? null);
+      setTopHolders(data?.topHolders ?? []);
+      setCongressTrades(data?.congressTrades ?? []);
+      setInsiderTrades(data?.insiderTrades ?? []);
+    } catch (e: any) {
+      setError(e.message);
+      setOwnership(null); setTopHolders([]); setCongressTrades([]); setInsiderTrades([]);
+    } finally { setLoading(false); }
   };
 
-  const refreshData = async () => {
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => setLoading(false), 1000);
-  };
-
-  const formatValue = (value: number) => {
-    if (value >= 1000000000) {
-      return `$${(value / 1000000000).toFixed(1)}B`;
-    } else if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`;
-    }
-    return `$${value.toLocaleString()}`;
-  };
-
-  const formatShares = (shares: number) => {
-    if (shares >= 1000000) {
-      return `${(shares / 1000000).toFixed(1)}M`;
-    }
-    return shares.toLocaleString();
-  };
+  useEffect(() => { load(); }, [ticker]);
 
   return (
     <Card className="widget-container">
@@ -62,117 +42,57 @@ export const InstitutionalData: React.FC<InstitutionalDataProps> = ({ ticker = '
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center space-x-2">
             <Building className="h-5 w-5" />
-            <span>Institutional Data</span>
+            <span>Institutional / Insider / Congress</span>
+            <Badge variant="secondary">Live</Badge>
           </CardTitle>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={refreshData}
-            disabled={loading}
-          >
+          <Button variant="ghost" size="sm" onClick={load} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </CardHeader>
-      
       <CardContent>
-        {/* Institutional Ownership Overview */}
+        {error && <div className="text-destructive text-sm mb-3">{error}</div>}
         <div className="mb-4 p-3 bg-muted rounded-lg">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium">Institutional Ownership</span>
-            <Badge variant="outline">{institutionalData.ownership}%</Badge>
+            <Badge variant="outline">{ownership !== null ? `${ownership.toFixed(1)}%` : 'N/A'}</Badge>
           </div>
-          <Progress value={institutionalData.ownership} className="h-2" />
+          <Progress value={ownership ?? 0} className="h-2" />
         </div>
-
-        <Tabs defaultValue="holders" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="holders" className="text-xs">Top Holders</TabsTrigger>
-            <TabsTrigger value="congress" className="text-xs">Congress</TabsTrigger>
-            <TabsTrigger value="insiders" className="text-xs">Insiders</TabsTrigger>
+        <Tabs defaultValue="holders">
+          <TabsList className="grid grid-cols-3">
+            <TabsTrigger value="holders">Top Holders</TabsTrigger>
+            <TabsTrigger value="congress">Congress</TabsTrigger>
+            <TabsTrigger value="insiders">Insiders</TabsTrigger>
           </TabsList>
-          
           <TabsContent value="holders" className="mt-3">
-            <div className="space-y-2">
-              {institutionalData.topHolders.map((holder, index) => (
-                <div key={index} className="flex items-center justify-between p-2 hover:bg-muted rounded-lg">
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">{holder.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatShares(holder.shares)} shares
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">{holder.percentage}%</div>
-                    <div className={`text-xs ${
-                      holder.change >= 0 ? 'text-bull' : 'text-bear'
-                    }`}>
-                      {holder.change >= 0 ? '+' : ''}{holder.change}%
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {topHolders.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground text-sm">No data available</div>
+            ) : (
+              <div className="space-y-2">
+                {topHolders.map((h, i) => <div key={i} className="text-sm">{h.name} {h.percentage ? `${h.percentage.toFixed(1)}%` : ''}</div>)}
+              </div>
+            )}
           </TabsContent>
-          
           <TabsContent value="congress" className="mt-3">
-            <div className="space-y-2">
-              {institutionalData.congressTrades.map((trade, index) => (
-                <div key={index} className="p-2 border rounded-lg">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="text-sm font-medium">{trade.member}</div>
-                    <div className="flex items-center space-x-2">
-                      <Badge 
-                        variant={trade.action === 'BUY' ? 'default' : 'destructive'} 
-                        className="text-xs"
-                      >
-                        {trade.action}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {trade.party}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{trade.date}</span>
-                    <span>{trade.amount}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {congressTrades.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground text-sm">No data available</div>
+            ) : (
+              <div className="space-y-2">
+                {congressTrades.map((t, i) => <div key={i} className="text-sm">{t.member} {t.action} {t.amount}</div>)}
+              </div>
+            )}
           </TabsContent>
-          
           <TabsContent value="insiders" className="mt-3">
-            <div className="space-y-2">
-              {institutionalData.insiderTrades.map((trade, index) => (
-                <div key={index} className="p-2 border rounded-lg">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="text-sm font-medium">{trade.insider}</div>
-                    <Badge 
-                      variant={trade.action === 'BUY' ? 'default' : 'destructive'} 
-                      className="text-xs"
-                    >
-                      {trade.action}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{trade.date}</span>
-                    <div className="text-right">
-                      <div>{formatShares(trade.shares)} shares</div>
-                      <div>{formatValue(trade.value)}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {insiderTrades.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground text-sm">No data available</div>
+            ) : (
+              <div className="space-y-2">
+                {insiderTrades.map((t, i) => <div key={i} className="text-sm">{t.insider} {t.action} {t.shares} {t.value}</div>)}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
-
-        <div className="mt-3 pt-3 border-t">
-          <p className="text-xs text-muted-foreground">
-            Data from Quiver Quantitative. Congress trades reported within 45 days as required by law.
-          </p>
-        </div>
       </CardContent>
     </Card>
   );

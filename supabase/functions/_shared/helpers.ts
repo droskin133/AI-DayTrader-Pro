@@ -40,8 +40,11 @@ export async function checkRateLimit(
   limit: number,
   windowSeconds: number = 60
 ): Promise<{ allowed: boolean; count: number }> {
+  // Extract user_id from UUID if userId is provided, otherwise use 'anon'
+  const userIdStr = userId ? String(userId) : 'anon';
+  
   const { data, error } = await supabase.rpc('increment_rate_limit', {
-    p_user_id: userId || 'anon',
+    p_user_id: userIdStr,
     p_bucket: bucket,
     p_window_seconds: windowSeconds
   });

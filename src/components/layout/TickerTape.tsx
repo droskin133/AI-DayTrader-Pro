@@ -33,10 +33,10 @@ export const TickerTape: React.FC = () => {
         let watchlist: string[] = [];
         if (user) {
           const { data } = await supabase
-            .from('watchlists')
-            .select('symbol')
+            .from('watchlist')
+            .select('ticker')
             .eq('user_id', user.id);
-          watchlist = data?.map((w: any) => w.symbol) ?? [];
+          watchlist = data?.map((w: any) => w.ticker) ?? [];
         }
         const allSymbols = Array.from(new Set([...watchlist, ...defaultSymbols]));
 

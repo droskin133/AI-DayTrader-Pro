@@ -39,9 +39,10 @@ export const WatchlistWidget: React.FC = () => {
     
     setLoading(true);
     try {
+      // Fetch watchlist symbols
       const { data: watchlistData, error: watchlistError } = await supabase
-        .from('watchlists')
-        .select('symbol')
+        .from('watchlist')
+        .select('ticker')
         .eq('user_id', user.id);
 
       if (watchlistError) throw watchlistError;
@@ -53,14 +54,14 @@ export const WatchlistWidget: React.FC = () => {
               const { data: priceData } = await supabase
                 .from('stock_prices')
                 .select('*')
-                .eq('ticker', item.symbol)
+                .eq('ticker', item.ticker)
                 .order('ts', { ascending: false })
                 .limit(2);
 
               const { data: alertData } = await supabase
                 .from('alerts')
                 .select('id')
-                .eq('ticker', item.symbol)
+                .eq('ticker', item.ticker)
                 .eq('user_id', user.id)
                 .eq('status', 'active')
                 .limit(1);
@@ -72,7 +73,7 @@ export const WatchlistWidget: React.FC = () => {
                 const changePercent = (change / Number(prev.price)) * 100;
 
                 return {
-                  ticker: item.symbol,
+                  ticker: item.ticker,
                   price: Number(current.price),
                   change,
                   changePercent,
@@ -81,14 +82,14 @@ export const WatchlistWidget: React.FC = () => {
               }
 
               return {
-                ticker: item.symbol,
+                ticker: item.ticker,
                 price: 0,
                 change: 0,
                 changePercent: 0,
                 hasAlerts: (alertData && alertData.length > 0) || false
               };
             } catch (err) {
-              console.error(`Error fetching data for ${item.symbol}:`, err);
+              console.error(`Error fetching data for ${item.ticker}:`, err);
               return null;
             }
           })
@@ -114,11 +115,7 @@ export const WatchlistWidget: React.FC = () => {
 
     setAdding(true);
     try {
-      const { error } = await supabase
-        .from('watchlists')
-        .insert({ user_id: user.id, symbol: ticker });
-
-      if (error) throw error;
+      await supabase.rpc('toggle_watchlist', { ticker });
 
       await fetchWatchlist();
       setNewTicker('');
@@ -133,13 +130,7 @@ export const WatchlistWidget: React.FC = () => {
     if (!user) return;
     
     try {
-      const { error } = await supabase
-        .from('watchlists')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('symbol', ticker);
-
-      if (error) throw error;
+      await supabase.rpc('toggle_watchlist', { ticker });
 
       setWatchlist(prev => prev.filter(item => item.ticker !== ticker));
     } catch (error) {

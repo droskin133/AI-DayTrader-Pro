@@ -26,3 +26,12 @@ verify_jwt = false
 
 [functions.live-stock-price]
 verify_jwt = false
+
+[functions.market-movers]
+verify_jwt = false
+
+[functions.ai-trader-pro]
+verify_jwt = false
+
+[functions.options-flow]
+verify_jwt = false

@@ -22,83 +22,35 @@ export const TopMovers: React.FC = () => {
 
   useEffect(() => {
     const fetchMoversData = async () => {
+      setLoading(true);
       try {
-        // Fetch real top movers from equity snapshots
-        const { data: snapshots, error } = await supabase
-          .from('equity_snapshots')
-          .select('*')
-          .order('snapshot_time', { ascending: false })
-          .limit(50);
-
+        const { data, error } = await supabase.functions.invoke('market-movers');
+        
         if (error) throw error;
 
-        if (snapshots && snapshots.length > 0) {
-          // Get most recent snapshots by ticker
-          const latestByTicker = new Map();
-          snapshots.forEach(snap => {
-            if (!latestByTicker.has(snap.ticker) || 
-                new Date(snap.snapshot_time) > new Date(latestByTicker.get(snap.ticker).snapshot_time)) {
-              latestByTicker.set(snap.ticker, snap);
-            }
-          });
+        const mapMover = (item: any): MoverData => ({
+          symbol: item.ticker || '',
+          price: Number(item.price) || 0,
+          change: Number(item.change) || 0,
+          changePercent: Number(item.changePercent) || 0,
+          volume: Number(item.volume) || 0
+        });
 
-          const recentSnapshots = Array.from(latestByTicker.values());
-
-          // Sort and categorize
-          const gainers = recentSnapshots
-            .filter(s => s.percent_change > 0)
-            .sort((a, b) => b.percent_change - a.percent_change)
-            .slice(0, 5)
-            .map(s => ({
-              symbol: s.ticker,
-              price: s.price,
-              change: s.price * s.percent_change / 100,
-              changePercent: s.percent_change,
-              volume: s.volume || 0
-            }));
-
-          const losers = recentSnapshots
-            .filter(s => s.percent_change < 0)
-            .sort((a, b) => a.percent_change - b.percent_change)
-            .slice(0, 5)
-            .map(s => ({
-              symbol: s.ticker,
-              price: s.price,
-              change: s.price * s.percent_change / 100,
-              changePercent: s.percent_change,
-              volume: s.volume || 0
-            }));
-
-          const volumeLeaders = recentSnapshots
-            .sort((a, b) => (b.volume || 0) - (a.volume || 0))
-            .slice(0, 5)
-            .map(s => ({
-              symbol: s.ticker,
-              price: s.price,
-              change: s.price * s.percent_change / 100,
-              changePercent: s.percent_change,
-              volume: s.volume || 0
-            }));
-
-          setGainers(gainers);
-          setLosers(losers);
-          setVolume(volumeLeaders);
-        } else {
-          // ⚠️ NO FALLBACK - Show empty state
-          setGainers([]);
-          setLosers([]);
-          setVolume([]);
-        }
+        setGainers((data?.gainers || []).map(mapMover));
+        setLosers((data?.losers || []).map(mapMover));
+        setVolume((data?.volume || []).map(mapMover));
       } catch (error) {
-        console.error('Error fetching movers data:', error);
+        console.error('Error fetching movers:', error);
+        setGainers([]);
+        setLosers([]);
+        setVolume([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchMoversData();
-    const interval = setInterval(fetchMoversData, 60000); // Update every minute
-
+    const interval = setInterval(fetchMoversData, 60000); // Refresh every minute
     return () => clearInterval(interval);
   }, []);
 

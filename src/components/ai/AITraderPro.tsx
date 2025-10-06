@@ -13,11 +13,12 @@ export const AITraderPro: React.FC<{ ticker?: string }> = ({ ticker = 'AAPL' }) 
   const analyze = async () => {
     setLoading(true); setError(null); setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke('ai-trader-pro', { body: { ticker, timeframe: 'intraday' } });
+      const { data, error } = await supabase.functions.invoke('ai-trader-pro', { body: { symbol: ticker, timeframe: 'intraday' } });
       if (error) throw error;
       setResult(data);
     } catch (e: any) { 
-      setError(e.message); 
+      const msg = e?.message || 'AI analysis failed';
+      setError(msg); 
     } finally { 
       setLoading(false); 
     }

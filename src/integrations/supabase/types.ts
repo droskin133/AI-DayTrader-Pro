@@ -3147,30 +3147,6 @@ export type Database = {
           },
         ]
       }
-      watchlists: {
-        Row: {
-          created_at: string | null
-          id: number
-          symbol: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          symbol: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          symbol?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       widget_layouts: {
         Row: {
           id: string
@@ -3231,10 +3207,11 @@ export type Database = {
         }
         Relationships: []
       }
-      export_my_data: {
+      latest_price: {
         Row: {
-          row: Json | null
-          table_name: string | null
+          price: number | null
+          ticker: string | null
+          ts: string | null
         }
         Relationships: []
       }
@@ -3342,6 +3319,14 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_watchlist_with_prices: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          price: number
+          ticker: string
+          ts: string
+        }[]
       }
       increment_rate_limit: {
         Args: { p_bucket: string; p_user_id: string; p_window_seconds: number }

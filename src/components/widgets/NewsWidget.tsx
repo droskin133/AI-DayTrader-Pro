@@ -30,15 +30,17 @@ export const NewsWidget: React.FC = () => {
   const fetchNews = async () => {
     setLoading(true);
     try {
-      const { data } = await supabase.functions.invoke('news', {
+      const { data, error } = await supabase.functions.invoke('news', {
         body: { symbol: 'SPY' }
       });
       
-      if (data?.items) {
-        setNewsItems(data.items.slice(0, 5));
-      }
+      if (error) throw error;
+      
+      const items = data?.items || [];
+      setNewsItems(items.slice(0, 5));
     } catch (error) {
       console.error('Error fetching news:', error);
+      setNewsItems([]);
     } finally {
       setLoading(false);
     }

@@ -35,3 +35,12 @@ verify_jwt = false
 
 [functions.options-flow]
 verify_jwt = false
+
+[functions.ai-chart]
+verify_jwt = false
+
+[functions.ai-news]
+verify_jwt = false
+
+[functions.ai-flows]
+verify_jwt = false

@@ -21,59 +21,77 @@ export const AIStockAnalysis: React.FC<AIStockAnalysisProps> = ({ ticker = 'AAPL
     }
   }, [ticker]);
 
-  // Mock AI analysis data
-  const mockAnalysis = {
-    recommendation: 'BUY',
-    confidence: 78,
-    priceTarget: 195.00,
-    currentPrice: 175.43,
-    upside: 11.2,
-    keyFactors: [
-      'Strong institutional buying detected',
-      'Volume 15% above average',
-      'Breaking above 20-day moving average',
-      'Positive earnings sentiment'
-    ],
-    risks: [
-      'Market volatility concerns',
-      'Sector rotation risk'
-    ],
-    technicalScore: 82,
-    fundamentalScore: 74,
-    sentimentScore: 85,
-    successRate: 67.5
-  };
-
   const runAnalysis = async () => {
     setAnalyzing(true);
+    setAnalysis(null);
     
     try {
-      const { data, error } = await supabase.functions.invoke('ai-analysis', {
+      // First get chart data
+      const { data: chartData, error: chartError } = await supabase.functions.invoke('ai-chart', {
         body: { 
-          mode: 'chart',
           symbol: ticker,
-          payload: {
-            current_price: mockAnalysis.currentPrice,
-            timestamp: new Date().toISOString()
-          }
+          interval: '1h',
+          horizon: '1d'
         }
       });
 
-      if (error) throw error;
+      if (chartError) throw chartError;
+      if (!chartData) throw new Error('No chart data returned');
 
-      if (data) {
-        setAnalysis({
-          ...mockAnalysis,
-          recommendation: data.confidence > 0.7 ? 'BUY' : data.confidence < 0.3 ? 'SELL' : 'HOLD',
-          confidence: Math.round(data.confidence * 100),
-          keyFactors: data.rationale || mockAnalysis.keyFactors
-        });
-      } else {
-        setAnalysis(mockAnalysis);
-      }
+      // Then get news sentiment
+      const { data: newsData } = await supabase.functions.invoke('ai-news', {
+        body: { 
+          symbol: ticker,
+          mode: 'aggregate'
+        }
+      });
+
+      // Calculate recommendation from AI analysis
+      const chartAnalysis = chartData.analysis || {};
+      const sentiment = newsData?.sentiment || 0;
+      const confidence = chartAnalysis.confidence || 0.5;
+
+      let recommendation = 'HOLD';
+      if (confidence > 0.7 && sentiment > 0.3) recommendation = 'BUY';
+      else if (confidence > 0.7 && sentiment < -0.3) recommendation = 'SELL';
+
+      const lastPrice = chartData.candles?.[chartData.candles.length - 1]?.close || 0;
+      const targetMultiplier = sentiment > 0 ? 1.1 : 0.95;
+      
+      setAnalysis({
+        recommendation,
+        confidence: Math.round(confidence * 100),
+        priceTarget: lastPrice * targetMultiplier,
+        currentPrice: lastPrice,
+        upside: ((targetMultiplier - 1) * 100),
+        keyFactors: [
+          `Trend: ${chartAnalysis.trend || 'neutral'}`,
+          `Patterns: ${chartAnalysis.patterns?.join(', ') || 'none detected'}`,
+          `News sentiment: ${sentiment > 0 ? 'positive' : sentiment < 0 ? 'negative' : 'neutral'}`,
+          ...(newsData?.key_themes || [])
+        ],
+        technicalScore: Math.round(confidence * 100),
+        fundamentalScore: Math.round((1 + sentiment) * 50),
+        sentimentScore: Math.round((1 + sentiment) * 50),
+        successRate: Math.round(confidence * 100),
+        source: chartData.source
+      });
     } catch (error) {
       console.error('AI analysis error:', error);
-      setAnalysis(mockAnalysis);
+      // Show error to user - no dummy fallback
+      setAnalysis({
+        recommendation: 'ERROR',
+        confidence: 0,
+        priceTarget: 0,
+        currentPrice: 0,
+        upside: 0,
+        keyFactors: ['Analysis failed - check API keys and try again'],
+        technicalScore: 0,
+        fundamentalScore: 0,
+        sentimentScore: 0,
+        successRate: 0,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     } finally {
       setAnalyzing(false);
     }

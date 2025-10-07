@@ -26,27 +26,19 @@ export const AIDeepScanner: React.FC = () => {
 
       if (error) {
         console.error('Error calling AI scanner:', error);
-        // Fallback to mock data
-        setResults({
-          overlays: [
-            { type: 'support', ticker: 'AAPL', level: 175.50, confidence: 0.85 },
-            { type: 'resistance', ticker: 'TSLA', level: 245.00, confidence: 0.78 }
-          ],
-          suggestions: [
-            'AAPL approaching strong support at $175.50 - potential bounce opportunity',
-            'Unusual volume spike detected in NVDA - monitor for breakout',
-            'SPY showing bearish divergence on RSI - consider protective positions'
-          ]
-        });
-      } else {
-        setResults(data);
+        throw error;
       }
+      
+      setResults(data || { overlays: [], suggestions: [] });
     } catch (error) {
       console.error('Error running AI scan:', error);
-      // Fallback to mock data
       setResults({
         overlays: [],
-        suggestions: [`Analysis for: ${prompt.substring(0, 50)}...`, 'Please try again or refine your query']
+        suggestions: [
+          'AI scan failed - check API configuration',
+          error instanceof Error ? error.message : 'Unknown error'
+        ],
+        error: true
       });
     } finally {
       setScanning(false);

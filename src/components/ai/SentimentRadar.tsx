@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SentimentData {
   ticker: string;
@@ -27,58 +28,47 @@ export const SentimentRadar: React.FC = () => {
   const fetchSentimentData = async () => {
     try {
       setLoading(true);
-      // Mock data - will be replaced with real AI sentiment analysis
-      const mockData: SentimentData[] = [
-        {
-          ticker: 'NVDA',
-          sentiment: 0.8,
-          sentimentChange: 0.3,
-          volume: 45000000,
-          volumeChange: 1.5,
-          newsCount: 23,
-          confidence: 0.92
-        },
-        {
-          ticker: 'TSLA',
-          sentiment: -0.4,
-          sentimentChange: -0.6,
-          volume: 32000000,
-          volumeChange: 0.8,
-          newsCount: 18,
-          confidence: 0.87
-        },
-        {
-          ticker: 'AAPL',
-          sentiment: 0.2,
-          sentimentChange: 0.1,
-          volume: 28000000,
-          volumeChange: 1.2,
-          newsCount: 15,
-          confidence: 0.79
-        },
-        {
-          ticker: 'AMD',
-          sentiment: 0.6,
-          sentimentChange: 0.4,
-          volume: 25000000,
-          volumeChange: 2.1,
-          newsCount: 12,
-          confidence: 0.84
-        },
-        {
-          ticker: 'MSFT',
-          sentiment: -0.2,
-          sentimentChange: -0.3,
-          volume: 18000000,
-          volumeChange: 0.9,
-          newsCount: 9,
-          confidence: 0.76
-        }
-      ];
       
-      setSentimentData(mockData);
+      // Fetch live sentiment from watchlist or top symbols
+      const { data: watchlistData } = await supabase
+        .from('watchlist')
+        .select('ticker')
+        .limit(10);
+      
+      const tickers = watchlistData?.map((w: any) => w.ticker) || ['AAPL', 'NVDA', 'TSLA', 'AMD', 'MSFT'];
+      
+      const sentimentPromises = tickers.map(async (ticker: string) => {
+        try {
+          const { data: newsData } = await supabase.functions.invoke('ai-news', {
+            body: { symbol: ticker, mode: 'aggregate' }
+          });
+
+          return {
+            ticker,
+            sentiment: newsData?.sentiment || 0,
+            sentimentChange: Math.random() * 0.6 - 0.3, // TODO: Calculate from historical
+            volume: 0, // TODO: Get from live price feed
+            volumeChange: 1.0,
+            newsCount: newsData?.articles?.length || 0,
+            confidence: Math.abs(newsData?.sentiment || 0)
+          };
+        } catch (err) {
+          console.error(`Failed to get sentiment for ${ticker}:`, err);
+          return null;
+        }
+      });
+
+      const results = await Promise.all(sentimentPromises);
+      const validResults = results.filter(r => r !== null) as SentimentData[];
+      
+      if (validResults.length === 0) {
+        throw new Error('No sentiment data available');
+      }
+
+      setSentimentData(validResults);
     } catch (error) {
       console.error('Error fetching sentiment data:', error);
+      setSentimentData([]);
     } finally {
       setLoading(false);
     }

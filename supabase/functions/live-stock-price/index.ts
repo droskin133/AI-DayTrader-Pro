@@ -1,81 +1,72 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { supabase } from "../_shared/supabase.ts";
-import { ok, fail, corsHeaders, checkRateLimit, requireEnv } from "../_shared/helpers.ts";
-
-/**
- * Live Stock Price Function
- * ⚠️ LIVE DATA ONLY - No dummy/mock/placeholder values allowed
- * Fetches real-time stock prices from Polygon API and stores in stock_prices table
- */
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+import { corsHeaders } from '../_shared/helpers.ts';
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { ticker } = await req.json();
-    
-    if (!ticker) {
-      return new Response(JSON.stringify({ error: "ticker required" }), {
+    const { symbols = [], symbol } = await req.json();
+    const list = Array.isArray(symbols) && symbols.length ? symbols : (symbol ? [symbol] : []);
+
+    if (list.length === 0) {
+      return new Response(JSON.stringify({ error: 'No symbols provided' }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // Rate limit check
-    const authHeader = req.headers.get("Authorization");
-    const userId = authHeader ? authHeader.replace("Bearer ", "") : null;
-    const rateLimit = await checkRateLimit(supabase, userId, "stock-price", 100, 60);
-    
-    if (!rateLimit.allowed) {
-      return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
-        status: 429,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+    const poly = Deno.env.get('POLYGON_API_KEY');
+    const finn = Deno.env.get('FINNHUB_API_KEY');
+
+    const fetchPolygon = async (s: string) => {
+      if (!poly) return null;
+      try {
+        const r = await fetch(`https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${encodeURIComponent(s)}?apiKey=${poly}`);
+        if (!r.ok) return null;
+        const j = await r.json();
+        const t = j?.ticker || j?.results;
+        const price = t?.lastTrade?.p ?? t?.last?.price ?? null;
+        const ch = t?.todaysChange ?? null;
+        const chp = t?.todaysChangePerc ?? null;
+        return { ticker: s, price, change: ch, changePercent: chp };
+      } catch {
+        return null;
+      }
+    };
+
+    const fetchFinnhub = async (s: string) => {
+      if (!finn) return null;
+      try {
+        const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(s)}&token=${finn}`);
+        if (!r.ok) return null;
+        const j = await r.json();
+        return { ticker: s, price: j.c ?? null, change: j.d ?? null, changePercent: j.dp ?? null };
+      } catch {
+        return null;
+      }
+    };
+
+    const out: any[] = [];
+    for (const s of list) {
+      const a = await fetchPolygon(s);
+      if (a && a.price !== null) { out.push(a); continue; }
+      const b = await fetchFinnhub(s);
+      if (b && b.price !== null) { out.push(b); continue; }
+      out.push({ ticker: s, price: null, change: null, changePercent: null });
     }
 
-    // Fetch live data from Polygon
-    const apiKey = requireEnv("POLYGON_API_KEY");
-    const response = await fetch(
-      `https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?apiKey=${apiKey}`
-    );
-
-    if (!response.ok) {
-      throw new Error(`Polygon API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    
-    if (!data.results || data.results.length === 0) {
-      return new Response(JSON.stringify({ error: "No data available" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
-
-    const result = data.results[0];
-    
-    // Store in stock_prices table
-    await supabase.from("stock_prices").insert({
-      ticker,
-      price: result.c,
-      ts: new Date(result.t)
+    return new Response(JSON.stringify(out), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
-
-    return ok({
-      ticker,
-      price: result.c,
-      volume: result.v,
-      timestamp: result.t,
-      open: result.o,
-      high: result.h,
-      low: result.l,
-      close: result.c
-    });
-
   } catch (err) {
-    console.error("Error in live-stock-price:", err);
-    return fail("live-stock-price", err, { ticker: (await req.json()).ticker }, supabase);
+    console.error('live-stock-price error:', err);
+    return new Response(JSON.stringify({ 
+      error: err instanceof Error ? err.message : 'Unknown error' 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 });

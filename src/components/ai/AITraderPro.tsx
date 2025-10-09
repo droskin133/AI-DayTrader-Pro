@@ -1,26 +1,67 @@
-import React, { useState } from 'react';
-import { Brain, TrendingUp, AlertTriangle, Target } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Brain, TrendingUp, AlertTriangle, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export const AITraderPro: React.FC<{ ticker?: string }> = ({ ticker = 'AAPL' }) => {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   const analyze = async () => {
-    setLoading(true); setError(null); setResult(null);
+    setLoading(true); 
+    setError(null); 
+    setResult(null);
+    
     try {
-      const { data, error } = await supabase.functions.invoke('ai-trader-pro', { body: { symbol: ticker, timeframe: 'intraday' } });
+      const { data, error } = await supabase.functions.invoke('ai-trader-pro', { 
+        body: { symbol: ticker, timeframe: 'intraday' } 
+      });
+      
       if (error) throw error;
+      
       setResult(data);
+      
+      toast({
+        title: "Analysis Complete",
+        description: `AI analysis for ${ticker} is ready`,
+      });
     } catch (e: any) { 
       const msg = e?.message || 'AI analysis failed';
-      setError(msg); 
+      setError(msg);
+      
+      toast({
+        title: "Analysis Failed",
+        description: msg,
+        variant: "destructive",
+      });
     } finally { 
       setLoading(false); 
+    }
+  };
+
+  const submitFeedback = async (positive: boolean) => {
+    if (!result) return;
+    
+    try {
+      await supabase.from('ai_feedback').insert({
+        prompt: `AI Trader Pro analysis for ${ticker}`,
+        response: JSON.stringify(result),
+        thumbs_up: positive,
+        feature: 'ai-trader-pro',
+        score: positive ? 1 : 0
+      });
+
+      toast({
+        title: "Feedback Submitted",
+        description: "Thank you for helping us improve!",
+      });
+    } catch (e) {
+      console.error('Failed to submit feedback:', e);
     }
   };
 
@@ -51,22 +92,62 @@ export const AITraderPro: React.FC<{ ticker?: string }> = ({ ticker = 'AAPL' }) 
           </div>
         )}
         {result && result.trade_setup && (
-          <div className="space-y-3">
+          <div className="space-y-4">
+            {result.confidence && (
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <span className="text-sm font-medium">Confidence Score</span>
+                <Badge variant={result.confidence > 70 ? "default" : "secondary"}>
+                  {result.confidence}%
+                </Badge>
+              </div>
+            )}
+            
             <div className="grid grid-cols-2 gap-2">
               {result.market_signals && (
                 <>
                   <div className="text-center p-2 bg-muted rounded">
                     <div className="text-lg font-bold">{result.market_signals.options_activity || 0}</div>
-                    <div className="text-xs text-muted-foreground">Options</div>
+                    <div className="text-xs text-muted-foreground">Options Activity</div>
                   </div>
                   <div className="text-center p-2 bg-muted rounded">
                     <div className="text-lg font-bold">{result.market_signals.news_items || 0}</div>
-                    <div className="text-xs text-muted-foreground">News</div>
+                    <div className="text-xs text-muted-foreground">News Items</div>
                   </div>
                 </>
               )}
             </div>
-            <div className="text-sm whitespace-pre-wrap">{result.trade_setup}</div>
+            
+            <div className="p-3 bg-muted rounded-lg">
+              <div className="text-sm whitespace-pre-wrap">{result.trade_setup}</div>
+            </div>
+
+            {result.reasoning && (
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <h4 className="text-xs font-semibold mb-2">AI Reasoning</h4>
+                <p className="text-xs text-muted-foreground">{result.reasoning}</p>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-center pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => submitFeedback(true)}
+                className="flex items-center gap-1"
+              >
+                <ThumbsUp className="h-3 w-3" />
+                Accurate
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => submitFeedback(false)}
+                className="flex items-center gap-1"
+              >
+                <ThumbsDown className="h-3 w-3" />
+                Off Target
+              </Button>
+            </div>
           </div>
         )}
         {!result && !loading && !error && (

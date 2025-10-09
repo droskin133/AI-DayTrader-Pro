@@ -1,198 +1,111 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { supabase } from "../_shared/supabase.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface ChartRequest {
-  symbol: string;
-  interval: string;
-  range: {
-    from: string;
-    to: string;
-  };
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const startTime = Date.now();
-  const requestId = crypto.randomUUID();
-
   try {
-    const { symbol, interval, range }: ChartRequest = await req.json();
+    const { type, ticker } = await req.json();
     
-    if (!symbol || !interval || !range) {
+    if (!type || !ticker) {
       return new Response(
-        JSON.stringify({ error: 'Missing required parameters' }), 
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: 'type and ticker are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const finnhubApiKey = Deno.env.get("FINNHUB_API_KEY");
-    if (!finnhubApiKey) {
-      await supabase.from('audit_logs').insert({
-        function_name: 'finnhub-data',
-        error_message: 'Invalid API key — check configuration.',
-        request_id: requestId,
-        upstream_status: 401
-      });
-      return new Response(
-        JSON.stringify({ error: 'Invalid API key — check configuration.' }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const apiKey = Deno.env.get('FINNHUB_API_KEY');
+    if (!apiKey) {
+      throw new Error('FINNHUB_API_KEY not configured');
     }
 
-    // Check cache first for recent data (1 minute)
-    const { data: cachedData } = await supabase
-      .from('market_data_cache')
-      .select('*')
-      .eq('ticker', symbol)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    if (cachedData && new Date(cachedData.created_at).getTime() > Date.now() - (60 * 1000)) {
-      return new Response(
-        JSON.stringify({ ...cachedData.data, cached: true }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    let endpoint = '';
+    
+    switch (type) {
+      case 'quote':
+        endpoint = `https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`;
+        break;
+      case 'profile':
+        endpoint = `https://finnhub.io/api/v1/stock/profile2?symbol=${ticker}&token=${apiKey}`;
+        break;
+      case 'news':
+        const to = new Date().toISOString().split('T')[0];
+        const from = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        endpoint = `https://finnhub.io/api/v1/company-news?symbol=${ticker}&from=${from}&to=${to}&token=${apiKey}`;
+        break;
+      case 'candles':
+        const resolution = 'D';
+        const toTs = Math.floor(Date.now() / 1000);
+        const fromTs = toTs - (365 * 24 * 60 * 60);
+        endpoint = `https://finnhub.io/api/v1/stock/candle?symbol=${ticker}&resolution=${resolution}&from=${fromTs}&to=${toTs}&token=${apiKey}`;
+        break;
+      default:
+        return new Response(
+          JSON.stringify({ error: 'Invalid type' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
     }
 
-    // Convert dates to timestamps
-    const fromTimestamp = Math.floor(new Date(range.from).getTime() / 1000);
-    const toTimestamp = Math.floor(new Date(range.to).getTime() / 1000);
-
-    // Try 1-second resolution first, fallback to 1-minute if rate limited
-    let resolution = "1";
-    let fallbackUsed = false;
+    const response = await fetch(endpoint);
     
-    let url = `https://finnhub.io/api/v1/stock/candle?symbol=${symbol}&resolution=${resolution}&from=${fromTimestamp}&to=${toTimestamp}&token=${finnhubApiKey}`;
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
-    
-    let response = await fetch(url, { 
-      signal: controller.signal,
-      headers: { 'User-Agent': 'DayTrader-Pro/1.0' }
-    });
-    
-    clearTimeout(timeoutId);
-
-    // Handle rate limiting by falling back to 1-minute resolution
     if (!response.ok) {
-      if (response.status === 429) {
-        await supabase.from('audit_logs').insert({
-          function_name: 'finnhub-data',
-          error_message: 'Rate limit exceeded — try again later.',
-          request_id: requestId,
-          upstream_status: 429
-        });
-        
-        resolution = "1";
-        fallbackUsed = true;
-        url = `https://finnhub.io/api/v1/stock/candle?symbol=${symbol}&resolution=${resolution}&from=${fromTimestamp}&to=${toTimestamp}&token=${finnhubApiKey}`;
-        
-        const retryController = new AbortController();
-        const retryTimeoutId = setTimeout(() => retryController.abort(), 6000);
-        
-        response = await fetch(url, { 
-          signal: retryController.signal,
-          headers: { 'User-Agent': 'DayTrader-Pro/1.0' }
-        });
-        
-        clearTimeout(retryTimeoutId);
-      }
-      
-      if (!response.ok) {
-        await supabase.from('audit_logs').insert({
-          function_name: 'finnhub-data',
-          error_message: `Finnhub API error: ${response.status} ${response.statusText}`,
-          request_id: requestId,
-          upstream_status: response.status
-        });
-        throw new Error(`Finnhub API error: ${response.status} ${response.statusText}`);
-      }
+      throw new Error(`Finnhub API error: ${response.status}`);
     }
 
-    const candleData = await response.json();
+    const data = await response.json();
 
-    // Get real-time quote
-    const quoteUrl = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${finnhubApiKey}`;
-    const quoteController = new AbortController();
-    const quoteTimeoutId = setTimeout(() => quoteController.abort(), 6000);
-    
-    const quoteResponse = await fetch(quoteUrl, { 
-      signal: quoteController.signal,
-      headers: { 'User-Agent': 'DayTrader-Pro/1.0' }
-    });
-    
-    clearTimeout(quoteTimeoutId);
-    const quoteData = quoteResponse.ok ? await quoteResponse.json() : null;
-
-    // Transform candle data to required format
-    const candles = candleData.c ? candleData.c.map((close: number, index: number) => ({
-      t: new Date(candleData.t[index] * 1000).toISOString(),
-      o: candleData.o[index],
-      h: candleData.h[index],
-      l: candleData.l[index],
-      c: close,
-      v: candleData.v[index] || 0
-    })) : [];
-
-    const result = {
-      symbol,
-      interval: fallbackUsed ? "1m" : interval,
-      last_quote: quoteData ? {
-        p: quoteData.c || 0,
-        v: quoteData.v || 0,
-        t: new Date().toISOString()
-      } : null,
-      candles,
-      source: "finnhub",
-      fallback_used: fallbackUsed
-    };
-
-    // Cache the result for 1 minute
-    try {
-      await supabase.from('market_data_cache').insert({
-        ticker: symbol,
-        data: result
+    // Store quote data in stock_prices table
+    if (type === 'quote' && data.c) {
+      await supabase.from('stock_prices').insert({
+        ticker: ticker,
+        price: data.c,
+        change_percent: data.dp,
+        volume: data.v,
+        high_52w: data.h,
+        low_52w: data.l,
+        source: 'finnhub',
+        fetched_at: new Date().toISOString()
       });
-    } catch (cacheError) {
-      console.warn('Failed to cache data:', (cacheError as Error).message);
+    }
+
+    // Store news data
+    if (type === 'news' && Array.isArray(data)) {
+      const newsItems = data.map(item => ({
+        ticker: ticker,
+        title: item.headline,
+        url: item.url,
+        source: item.source,
+        published_at: new Date(item.datetime * 1000).toISOString(),
+        sentiment: item.sentiment > 0 ? 'positive' : item.sentiment < 0 ? 'negative' : 'neutral',
+        hash: `${ticker}_${item.datetime}_${item.headline}`.replace(/[^a-zA-Z0-9]/g, '_')
+      }));
+
+      await supabase.from('news_events').upsert(newsItems, { onConflict: 'hash', ignoreDuplicates: true });
     }
 
     return new Response(
-      JSON.stringify(result),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify(data),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    const latencyMs = Date.now() - startTime;
-    
-    // Log error to audit_logs
-    await supabase.from('audit_logs').insert({
-      function_name: 'finnhub-data',
-      error_message: (error as Error).message,
-      request_id: requestId,
-      payload_hash: 'error',
-      upstream_status: 500,
-      latency_ms: latencyMs
-    });
-
     console.error('Error in finnhub-data:', error);
     
     return new Response(
-      JSON.stringify({ error: 'Failed to fetch chart data' }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

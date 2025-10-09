@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
+import { supabase } from '@/integrations/supabase/client';
 
 interface RiskMetrics {
   portfolioVaR: number;
@@ -30,49 +31,30 @@ export const RiskManager: React.FC = () => {
   const [maxPositionSize, setMaxPositionSize] = useState([20]);
 
   useEffect(() => {
-    // Mock risk data
-    const mockMetrics: RiskMetrics = {
-      portfolioVaR: -2.8,
-      sharpeRatio: 1.42,
-      maxDrawdown: -12.5,
-      betaWeighted: 1.15,
-      diversificationScore: 72,
-      riskLevel: 'Medium'
+    const fetchRiskData = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('real-time-risk-scanner-ts');
+        
+        if (error) throw error;
+        
+        if (data?.metrics) {
+          setRiskMetrics({
+            portfolioVaR: data.metrics.maxDrawdown,
+            sharpeRatio: 0,
+            maxDrawdown: data.metrics.maxDrawdown,
+            betaWeighted: data.metrics.betaRisk,
+            diversificationScore: 100 - data.metrics.concentrationRisk,
+            riskLevel: data.riskLevel === 'high' ? 'High' : data.riskLevel === 'medium' ? 'Medium' : 'Low'
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching risk data:', error);
+      }
     };
 
-    const mockPositionRisks: PositionRisk[] = [
-      {
-        ticker: 'AAPL',
-        exposure: 35.2,
-        var95: -1.2,
-        correlation: 0.85,
-        riskContribution: 28.5
-      },
-      {
-        ticker: 'MSFT',
-        exposure: 20.8,
-        var95: -0.8,
-        correlation: 0.78,
-        riskContribution: 18.2
-      },
-      {
-        ticker: 'TSLA',
-        exposure: 12.1,
-        var95: -2.5,
-        correlation: 0.45,
-        riskContribution: 35.8
-      },
-      {
-        ticker: 'NVDA',
-        exposure: 13.1,
-        var95: -1.8,
-        correlation: 0.92,
-        riskContribution: 17.5
-      }
-    ];
-
-    setRiskMetrics(mockMetrics);
-    setPositionRisks(mockPositionRisks);
+    fetchRiskData();
+    const interval = setInterval(fetchRiskData, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   const getRiskLevelColor = (level: string): string => {

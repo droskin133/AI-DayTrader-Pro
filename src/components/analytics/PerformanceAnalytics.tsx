@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PerformanceData {
   date: string;
@@ -31,33 +32,41 @@ export const PerformanceAnalytics: React.FC = () => {
   const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
 
   useEffect(() => {
-    // Mock performance data
-    const mockMetrics: PerformanceMetrics = {
-      totalReturn: 24.8,
-      annualizedReturn: 18.6,
-      volatility: 16.2,
-      sharpeRatio: 1.42,
-      alpha: 6.8,
-      beta: 1.15,
-      winRate: 68.5,
-      maxDrawdown: -8.9,
-      calmarRatio: 2.09
+    const fetchPerformanceData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('ai_run_metrics')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (error) throw error;
+
+        // Calculate metrics from actual AI performance data
+        if (data && data.length > 0) {
+          const successfulRuns = data.filter(r => !r.error_message);
+          const winRate = (successfulRuns.length / data.length) * 100;
+
+          setMetrics({
+            totalReturn: 0, // Will be calculated from actual trades
+            annualizedReturn: 0,
+            volatility: 0,
+            sharpeRatio: 0,
+            alpha: 0,
+            beta: 1.0,
+            winRate: Number(winRate.toFixed(1)),
+            maxDrawdown: 0,
+            calmarRatio: 0
+          });
+        }
+
+        setPerformanceData([]);
+      } catch (error) {
+        console.error('Error fetching performance data:', error);
+      }
     };
 
-    const mockData: PerformanceData[] = [
-      { date: '2024-01', portfolioReturn: 2.5, spyReturn: 1.8, alpha: 0.7 },
-      { date: '2024-02', portfolioReturn: 5.2, spyReturn: 3.1, alpha: 2.1 },
-      { date: '2024-03', portfolioReturn: 8.9, spyReturn: 6.2, alpha: 2.7 },
-      { date: '2024-04', portfolioReturn: 12.1, spyReturn: 8.8, alpha: 3.3 },
-      { date: '2024-05', portfolioReturn: 15.6, spyReturn: 11.4, alpha: 4.2 },
-      { date: '2024-06', portfolioReturn: 18.3, spyReturn: 13.9, alpha: 4.4 },
-      { date: '2024-07', portfolioReturn: 21.7, spyReturn: 16.2, alpha: 5.5 },
-      { date: '2024-08', portfolioReturn: 19.8, spyReturn: 15.1, alpha: 4.7 },
-      { date: '2024-09', portfolioReturn: 24.8, spyReturn: 18.0, alpha: 6.8 },
-    ];
-
-    setMetrics(mockMetrics);
-    setPerformanceData(mockData);
+    fetchPerformanceData();
   }, [timeframe]);
 
   const getMetricColor = (value: number, isPositive: boolean = true): string => {

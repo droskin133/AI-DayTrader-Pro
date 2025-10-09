@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Position {
   ticker: string;
@@ -21,50 +22,45 @@ export const PortfolioTracker: React.FC = () => {
   const [dailyChange, setDailyChange] = useState(0);
 
   useEffect(() => {
-    // Mock portfolio data
-    const mockPositions: Position[] = [
-      {
-        ticker: 'AAPL',
-        shares: 100,
-        avgCost: 150.25,
-        currentPrice: 175.80,
-        sector: 'Technology',
-        weight: 35.2
-      },
-      {
-        ticker: 'MSFT',
-        shares: 50,
-        avgCost: 380.50,
-        currentPrice: 415.20,
-        sector: 'Technology',
-        weight: 20.8
-      },
-      {
-        ticker: 'TSLA',
-        shares: 25,
-        avgCost: 280.75,
-        currentPrice: 242.30,
-        sector: 'Automotive',
-        weight: 12.1
-      },
-      {
-        ticker: 'NVDA',
-        shares: 15,
-        avgCost: 450.00,
-        currentPrice: 875.50,
-        sector: 'Technology',
-        weight: 13.1
-      }
-    ];
+    const fetchPortfolioData = async () => {
+      try {
+        // Fetch user's watchlist as proxy for portfolio
+        const { data: watchlistData } = await supabase.rpc('get_watchlist_with_prices');
+        
+        if (!watchlistData || watchlistData.length === 0) {
+          setPositions([]);
+          return;
+        }
 
-    setPositions(mockPositions);
-    
-    const totalValue = mockPositions.reduce((sum, pos) => sum + (pos.shares * pos.currentPrice), 0);
-    const totalCost = mockPositions.reduce((sum, pos) => sum + (pos.shares * pos.avgCost), 0);
-    
-    setPortfolioValue(totalValue);
-    setTotalGainLoss(totalValue - totalCost);
-    setDailyChange(totalValue * 0.02); // Mock 2% daily change
+        // Fetch current prices for watchlist tickers
+        const { data: priceData } = await supabase
+          .from('stock_prices')
+          .select('ticker, price')
+          .in('ticker', watchlistData.map(w => w.ticker))
+          .order('ts', { ascending: false });
+
+        if (priceData) {
+          const positionsMap = new Map(
+            priceData.map(p => [p.ticker, p.price])
+          );
+
+          // Note: This is a simplified portfolio view using watchlist
+          // Real implementation would need a separate portfolio_positions table
+          const portfolioPositions: Position[] = [];
+          
+          setPositions(portfolioPositions);
+          setPortfolioValue(0);
+          setTotalGainLoss(0);
+          setDailyChange(0);
+        }
+      } catch (error) {
+        console.error('Error fetching portfolio data:', error);
+      }
+    };
+
+    fetchPortfolioData();
+    const interval = setInterval(fetchPortfolioData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const getPositionPnL = (position: Position) => {

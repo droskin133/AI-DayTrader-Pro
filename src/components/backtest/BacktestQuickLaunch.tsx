@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface BacktestResult {
   winRate: number;
@@ -21,6 +23,7 @@ export const BacktestQuickLaunch: React.FC = () => {
   const [timeframe, setTimeframe] = useState('6m');
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<BacktestResult | null>(null);
+  const { toast } = useToast();
 
   const strategies = [
     { 
@@ -54,22 +57,31 @@ export const BacktestQuickLaunch: React.FC = () => {
     if (!selectedStrategy || !ticker) return;
     
     setRunning(true);
+    setResults(null);
+    
     try {
-      // Simulate backtest execution
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      const { data, error } = await supabase.functions.invoke('ai-backtest-strategy-ts', {
+        body: { 
+          strategy: selectedStrategy,
+          ticker,
+          timeframe 
+        }
+      });
       
-      // Mock results - will be replaced with real backtest API
-      const mockResults: BacktestResult = {
-        winRate: 68.5,
-        avgReturn: 4.2,
-        maxDrawdown: -12.3,
-        totalTrades: 24,
-        profitFactor: 1.8
-      };
+      if (error) throw error;
       
-      setResults(mockResults);
+      if (data?.results) {
+        setResults(data.results);
+      } else {
+        throw new Error('No backtest results returned');
+      }
     } catch (error) {
       console.error('Error running backtest:', error);
+      toast({
+        title: "Backtest Failed",
+        description: error instanceof Error ? error.message : "Could not run backtest",
+        variant: "destructive"
+      });
     } finally {
       setRunning(false);
     }

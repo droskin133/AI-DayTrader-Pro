@@ -23,27 +23,40 @@ export const AIMarketAssistant: React.FC = () => {
     if (!query.trim()) return;
 
     setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('ai-analysis', {
-        body: { 
-          mode: 'market',
-          symbol: 'SPY',
-          payload: {
-            query,
-            timestamp: new Date().toISOString()
+    setResponse('');
+    
+    let retries = 0;
+    const maxRetries = 2;
+    
+    while (retries < maxRetries) {
+      try {
+        const { data, error } = await supabase.functions.invoke('ai-trader-pro', {
+          body: { 
+            symbol: 'SPY',
+            timeframe: '1D',
+            query
           }
+        });
+
+        if (error) throw error;
+        
+        if (data?.reasoning) {
+          setResponse(data.reasoning);
+          break;
         }
-      });
-
-      if (error) throw error;
-
-      setResponse(data?.summary || "Market analysis completed. Key trends are showing mixed signals with technology sectors leading performance.");
-    } catch (error) {
-      console.error('AI Assistant error:', error);
-      setResponse("Unable to fetch live market data at the moment. Please check your connection and try again.");
-    } finally {
-      setLoading(false);
+      } catch (error) {
+        console.error('AI Assistant error (attempt ' + (retries + 1) + '):', error);
+        retries++;
+        
+        if (retries >= maxRetries) {
+          setResponse('');
+        } else {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
     }
+    
+    setLoading(false);
   };
 
   const handleSuggestedPrompt = (prompt: string) => {
@@ -107,19 +120,20 @@ export const AIMarketAssistant: React.FC = () => {
           </div>
         )}
 
-        {/* Quick Market Insights */}
-        <div className="border-t pt-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">Market Snapshot</span>
+        {/* Loading Skeleton */}
+        {loading && !response && (
+          <div className="border-t pt-4">
+            <div className="flex items-center space-x-2 mb-2">
+              <div className="animate-pulse h-4 w-4 bg-muted rounded" />
+              <div className="animate-pulse h-4 w-32 bg-muted rounded" />
+            </div>
+            <div className="space-y-2">
+              <div className="animate-pulse h-3 w-full bg-muted rounded" />
+              <div className="animate-pulse h-3 w-3/4 bg-muted rounded" />
+              <div className="animate-pulse h-3 w-5/6 bg-muted rounded" />
+            </div>
           </div>
-          <div className="space-y-1 text-xs text-muted-foreground">
-            <p>• S&P 500 showing strong momentum with tech leadership</p>
-            <p>• Federal Reserve policy changes creating opportunities</p>
-            <p>• Energy and financial sectors rotating into favor</p>
-            <p>• AI and semiconductor stocks maintaining strength</p>
-          </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

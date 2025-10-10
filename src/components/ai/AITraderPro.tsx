@@ -34,6 +34,24 @@ export const AITraderPro: React.FC<{ ticker?: string }> = ({ ticker = 'AAPL' }) 
     if (ticker) {
       analyze();
     }
+
+    // Real-time subscriptions
+    const channel = supabase
+      .channel('ai-trader-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'stock_prices', filter: `ticker=eq.${ticker}` }, () => {
+        if (!loading) analyze();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'news_events' }, () => {
+        if (!loading) analyze();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ai_institutional_signals', filter: `ticker=eq.${ticker}` }, () => {
+        if (!loading) analyze();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [ticker]);
 
   const analyze = async () => {

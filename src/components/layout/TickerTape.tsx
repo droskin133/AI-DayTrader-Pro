@@ -29,7 +29,6 @@ export const TickerTape: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // user watchlist symbols
         let watchlist: string[] = [];
         if (user) {
           const { data } = await supabase
@@ -40,7 +39,6 @@ export const TickerTape: React.FC = () => {
         }
         const allSymbols = Array.from(new Set([...watchlist, ...defaultSymbols]));
 
-        // pull last 2 rows per symbol from stock_prices
         const { data: rows } = await supabase
           .from('stock_prices')
           .select('*')
@@ -54,22 +52,20 @@ export const TickerTape: React.FC = () => {
           if (grouped[r.ticker].length < 2) grouped[r.ticker].push(r);
         });
 
-        // fallback to live-stock-price
         const missing = allSymbols.filter((s) => !grouped[s]?.length);
         if (missing.length) {
-          await Promise.all(
-            missing.map(async (sym) => {
-              const { data } = await supabase.functions.invoke('live-stock-price', {
-                body: { ticker: sym },
-              });
-              if (data?.price) {
-                grouped[sym] = [{ ticker: sym, price: data.price, ts: new Date().toISOString() }];
+          const { data } = await supabase.functions.invoke('live-stock-price', {
+            body: { symbols: missing },
+          });
+          if (data && Array.isArray(data)) {
+            data.forEach((item: any) => {
+              if (item?.price) {
+                grouped[item.ticker] = [{ ticker: item.ticker, price: item.price, ts: new Date().toISOString() }];
               }
-            })
-          );
+            });
+          }
         }
 
-        // build tape rows
         const tape = allSymbols.map((sym) => {
           const [current, prev] = grouped[sym] || [];
           const price = current ? Number(current.price) : 0;
@@ -85,8 +81,19 @@ export const TickerTape: React.FC = () => {
     };
 
     fetchData();
-    const id = setInterval(fetchData, 30000);
-    return () => clearInterval(id);
+    const id = setInterval(fetchData, 15000);
+    
+    const channel = supabase
+      .channel('ticker-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'stock_prices' }, () => {
+        fetchData();
+      })
+      .subscribe();
+
+    return () => {
+      clearInterval(id);
+      supabase.removeChannel(channel);
+    };
   }, [user?.id]);
 
   if (!tickers.length) return null;

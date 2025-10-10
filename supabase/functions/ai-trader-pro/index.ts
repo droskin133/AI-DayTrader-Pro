@@ -3,140 +3,221 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/helpers.ts';
 
-interface ReqBody { symbol: string; timeframe?: string }
-
-const safe = async <T>(label: string, fn: () => Promise<T>, fallback: T): Promise<T> => {
-  try { return await fn(); } catch (e) { console.log(`[ai-trader-pro] skip ${label}`, e); return fallback; }
-};
+interface AIAnalysisResult {
+  symbol: string;
+  price: number;
+  change_percent: number;
+  confidence: number;
+  signal: 'bullish' | 'bearish' | 'neutral';
+  reasoning: string;
+  catalyst: string;
+  risk_level: 'low' | 'medium' | 'high';
+  news_sentiment: number;
+  institutional_flow: string;
+  technical_summary: string;
+  timestamp: string;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
-  const t0 = Date.now();
-  
+
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    const { symbol, timeframe = '1h' } = await req.json() as ReqBody;
+    const { symbol, timeframe = '1D' } = await req.json();
+    
     if (!symbol) {
-      return new Response(JSON.stringify({ error: 'symbol required' }), { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      throw new Error('Symbol is required');
     }
 
-    // 1) Live context via internal functions (graceful degradation)
-    const [quote, chart, news, quiver] = await Promise.all([
-      safe('quote',  () => supabase.functions.invoke('finnhub-data', { body: { type: 'quote',  symbol } }).then(r => r.data), null),
-      safe('chart',  () => supabase.functions.invoke('stock-chart-data', { body: { symbol, interval: '1m' } }).then(r => r.data), null),
-      safe('news',   () => supabase.functions.invoke('news', { body: { symbol } }).then(r => r.data), { items: [] }),
-      safe('quiver', () => supabase.functions.invoke('quiver-data', { body: { symbol } }).then(r => r.data), null)
-    ]);
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const openaiKey = Deno.env.get('OPENAI_API_KEY')!;
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // 2) Optional DB context (never fatal)
-    const [optFlow, priceLvls, instSig, commSig] = await Promise.all([
-      safe('options_flow', () => supabase.from('options_flow').select('*').limit(50).then(r => r.data || []), []),
-      safe('price_action_levels', () => supabase.from('price_action_levels').select('*').limit(50).then(r => r.data || []), []),
-      safe('ai_institutional_signals', () => supabase.from('ai_institutional_signals').select('*').limit(50).then(r => r.data || []), []),
-      safe('ai_commodity_signals', () => supabase.from('ai_commodity_signals').select('*').limit(50).then(r => r.data || []), []),
-    ]);
-
-    // 3) Build prompt for OpenAI (STRICT: no fabrication)
-    const openai = Deno.env.get('OPENAI_API_KEY');
-    if (!openai) {
-      return new Response(JSON.stringify({ 
-        error: 'OPENAI_API_KEY not configured',
-        ticker: symbol,
-        trade_setup: 'configuration-error'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    const recentNews = (news?.items || []).slice(0, 6).map((n: any) => 
-      `• ${n.source || ''} ${n.published_at || ''} ${n.headline || n.title || ''}`
-    ).join('\n');
-
-    const messages = [
-      { role: 'system', content: 'You are an equity trading assistant. Use ONLY the data provided. If insufficient, say so. Do NOT invent values. Return JSON with fields: ticker, timeframe, trade_setup, confidence (0-1), notes (array).' },
-      { role: 'user', content: `Symbol: ${symbol}\nTimeframe: ${timeframe}\nLast price: ${quote?.c ?? 'N/A'}\nNews:\n${recentNews || '(none)'}\nOptionsFlow: ${optFlow.length}\nPriceLevels: ${priceLvls.length}\nInstitutionalSignals: ${instSig.length}\nCommoditySignals: ${commSig.length}` }
-    ];
-
-    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${openai}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        model: 'gpt-4o-mini', 
-        temperature: 0.2, 
-        max_tokens: 700, 
-        messages 
-      })
+    // 1. Get live price data
+    const { data: priceResult, error: priceError } = await supabase.functions.invoke('live-stock-price', {
+      body: { symbols: [symbol] }
     });
 
-    if (!resp.ok) {
-      const errorText = await resp.text();
-      throw new Error(`OpenAI ${resp.status}: ${errorText}`);
+    if (priceError || !priceResult || priceResult.length === 0) {
+      throw new Error('Failed to fetch price data');
     }
 
-    const json = await resp.json();
-    let parsed: any = null;
-    try { 
-      parsed = JSON.parse(json.choices?.[0]?.message?.content || '{}'); 
-    } catch { 
-      parsed = null; 
-    }
+    const priceData = priceResult[0];
 
-    const result = parsed && parsed.ticker ? parsed : {
-      ticker: symbol,
-      timeframe,
-      trade_setup: 'insufficient-data',
-      market_signals: {
-        options_flow: optFlow.length,
-        price_levels: priceLvls.length,
-        institutional: instSig.length,
-        commodities: commSig.length,
-        news_items: (news?.items || []).length
+    // 2. Get recent news with sentiment
+    const { data: newsData } = await supabase
+      .from('news_events')
+      .select('*')
+      .ilike('tickers', `%${symbol}%`)
+      .order('published_at', { ascending: false })
+      .limit(5);
+
+    // 3. Get institutional signals
+    const { data: institutionalData } = await supabase
+      .from('ai_institutional_signals')
+      .select('*')
+      .eq('ticker', symbol)
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    // 4. Get insider/congress trades
+    const { data: insiderData } = await supabase
+      .from('insider_trades')
+      .select('*')
+      .eq('ticker', symbol)
+      .order('ingested_at', { ascending: false })
+      .limit(3);
+
+    const { data: congressData } = await supabase
+      .from('congress_trades')
+      .select('*')
+      .eq('ticker', symbol)
+      .order('ingested_at', { ascending: false })
+      .limit(3);
+
+    // 5. Calculate news sentiment
+    const avgSentiment = newsData && newsData.length > 0
+      ? newsData.reduce((acc, n) => {
+          const score = n.sentiment === 'positive' ? 1 : n.sentiment === 'negative' ? -1 : 0;
+          return acc + score;
+        }, 0) / newsData.length
+      : 0;
+
+    // 6. Analyze institutional flow
+    const institutionalFlow = institutionalData && institutionalData.length > 0
+      ? institutionalData[0].signal_type || 'neutral'
+      : 'neutral';
+
+    // 7. Build AI prompt
+    const prompt = `You are an expert financial analyst. Analyze this stock:
+
+Symbol: ${symbol}
+Current Price: $${priceData.price}
+Change: ${priceData.changePercent}%
+
+Recent News Headlines:
+${newsData?.map(n => `- ${n.headline} (${n.sentiment})`).join('\n') || 'No recent news'}
+
+Institutional Signals:
+${institutionalData?.map(i => `- ${i.signal_type}: ${i.details}`).join('\n') || 'No institutional signals'}
+
+Insider Activity:
+${insiderData?.map(i => `- ${i.transaction_type} by ${i.person}`).join('\n') || 'No insider trades'}
+
+Congress Trades:
+${congressData?.map(c => `- ${c.transaction_type} by ${c.person} (${c.chamber})`).join('\n') || 'No congress trades'}
+
+Provide a concise analysis with:
+1. Signal (bullish/bearish/neutral)
+2. Confidence (0-1)
+3. Reasoning (2-3 sentences)
+4. Key catalyst
+5. Risk level (low/medium/high)
+6. Technical summary
+
+Format as JSON:
+{
+  "signal": "bullish|bearish|neutral",
+  "confidence": 0.0-1.0,
+  "reasoning": "...",
+  "catalyst": "...",
+  "risk_level": "low|medium|high",
+  "technical_summary": "..."
+}`;
+
+    // 8. Call OpenAI
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiKey}`,
+        'Content-Type': 'application/json',
       },
-      generated_at_iso: new Date().toISOString(),
-      confidence: 0.35,
-      notes: ['Insufficient structured data from one or more sources.']
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You are a financial analyst. Always respond with valid JSON.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+      }),
+    });
+
+    if (!openaiResponse.ok) {
+      const errorText = await openaiResponse.text();
+      throw new Error(`OpenAI API error: ${openaiResponse.status} ${errorText}`);
+    }
+
+    const openaiData = await openaiResponse.json();
+    const aiContent = openaiData.choices[0].message.content;
+    
+    // Parse AI response
+    let aiAnalysis;
+    try {
+      aiAnalysis = JSON.parse(aiContent);
+    } catch {
+      aiAnalysis = {
+        signal: 'neutral',
+        confidence: 0.5,
+        reasoning: aiContent,
+        catalyst: 'Analysis in progress',
+        risk_level: 'medium',
+        technical_summary: 'See reasoning'
+      };
+    }
+
+    // 9. Build final response
+    const result: AIAnalysisResult = {
+      symbol: symbol.toUpperCase(),
+      price: priceData.price,
+      change_percent: priceData.changePercent,
+      confidence: aiAnalysis.confidence || 0.5,
+      signal: aiAnalysis.signal || 'neutral',
+      reasoning: aiAnalysis.reasoning || 'Analysis unavailable',
+      catalyst: aiAnalysis.catalyst || 'Market dynamics',
+      risk_level: aiAnalysis.risk_level || 'medium',
+      news_sentiment: avgSentiment,
+      institutional_flow: institutionalFlow,
+      technical_summary: aiAnalysis.technical_summary || 'Technical analysis in progress',
+      timestamp: new Date().toISOString()
     };
 
-    // Learning log (best effort)
-    try { 
-      await supabase.from('ai_learning_log').insert({ 
-        user_id: null, 
-        ticker: symbol, 
-        mode: 'ai-trader-pro', 
-        input: { symbol, timeframe }, 
-        output: result 
-      }); 
-    } catch {}
-
-    try { 
-      await supabase.from('audit_logs').insert({ 
-        function_name: 'ai-trader-pro', 
-        action: 'analyze', 
-        payload: { symbol }, 
-        created_at: new Date().toISOString() 
-      }); 
-    } catch {}
+    // 10. Log to ai_learning_log
+    await supabase.from('ai_learning_log').insert({
+      ticker: symbol.toUpperCase(),
+      mode: 'trader-pro',
+      input_text: `Analysis for ${symbol}`,
+      input: { symbol, timeframe },
+      output: result
+    });
 
     return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (err) {
-    console.error('ai-trader-pro error:', err);
-    return new Response(JSON.stringify({ 
-      error: err instanceof Error ? err.message : 'Unknown error',
-      ticker: null,
-      trade_setup: 'error'
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+
+  } catch (error) {
+    console.error('AI Trader Pro error:', error);
+    
+    // Log error
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+      
+      await supabase.from('error_logs').insert({
+        function_name: 'ai-trader-pro',
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+        metadata: { error: String(error) }
+      });
+    } catch {}
+    
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });

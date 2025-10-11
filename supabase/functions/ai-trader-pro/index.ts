@@ -34,9 +34,9 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // 1. Get live price data
+    // 1. Get live price data - Use correct parameter name
     const { data: priceResult, error: priceError } = await supabase.functions.invoke('live-stock-price', {
-      body: { symbols: [symbol] }
+      body: { tickers: [symbol] }
     });
 
     if (priceError || !priceResult || priceResult.length === 0) {
@@ -182,13 +182,20 @@ Format as JSON:
       timestamp: new Date().toISOString()
     };
 
-    // 10. Log to ai_learning_log
+    // 10. Log to ai_learning_log and ai_run_metrics
     await supabase.from('ai_learning_log').insert({
       ticker: symbol.toUpperCase(),
       mode: 'trader-pro',
       input_text: `Analysis for ${symbol}`,
       input: { symbol, timeframe },
       output: result
+    });
+
+    await supabase.from('ai_run_metrics').insert({
+      mode: 'trader-pro',
+      ticker: symbol.toUpperCase(),
+      latency_ms: Date.now() - new Date(result.timestamp).getTime(),
+      used_cache: false
     });
 
     return new Response(JSON.stringify(result), {

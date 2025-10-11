@@ -39,23 +39,20 @@ serve(async (req) => {
       .order('reported_date', { ascending: false })
       .limit(limit);
 
+    // Normalize output - only return required fields: ticker, person, action, detected_at
     const result = {
       symbol,
       insider_trades: (insiderTrades || []).map(trade => ({
+        ticker: trade.ticker,
         person: trade.person,
-        transaction_type: trade.transaction_type,
-        shares: trade.shares,
-        price: trade.price,
-        filed_at: trade.filed_at,
-        source: 'sec'
+        action: trade.transaction_type,
+        detected_at: trade.ingested_at
       })),
-      congressional_trades: (congressTrades || []).map(trade => ({
-        member: trade.person,
-        chamber: trade.chamber,
-        transaction_type: trade.transaction_type,
-        amount_range: trade.amount_range,
-        disclosed_at: trade.reported_date,
-        source: 'congress'
+      congress_trades: (congressTrades || []).map(trade => ({
+        ticker: trade.ticker,
+        person: trade.person,
+        action: trade.transaction_type,
+        detected_at: trade.reported_date
       })),
       total_trades: (insiderTrades?.length || 0) + (congressTrades?.length || 0),
       timestamp: new Date().toISOString()

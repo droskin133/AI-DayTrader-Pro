@@ -64,27 +64,40 @@ const Stock: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch live price from Finnhub
-      const price = await fetchLivePrice(symbol);
-      setLivePrice(price);
-      
-      if (price) {
+      // Fetch live data from polygon-data and ai-chart
+      const [candleRes, overlayRes] = await Promise.all([
+        supabase.functions.invoke('polygon-data', { body: { ticker: symbol } }),
+        supabase.functions.invoke('ai-chart', { body: { ticker: symbol, timeframe: '1D' } })
+      ]);
+
+      if (candleRes.data) {
+        const price = candleRes.data.c || 0;
+        const open = candleRes.data.o || 0;
+        const change = price - open;
+        const changePercent = open > 0 ? (change / open) * 100 : 0;
+
+        setLivePrice(price);
         setStockData({
           symbol: symbol,
           price: price,
-          change: 0, // Will be calculated from real market data
-          changePercent: 0, // Will be calculated from real market data
-          volume: 0, // Will be fetched from equity_snapshots
-          marketCap: 'N/A', // Will be calculated from real data
-          pe: 0, // Will be fetched from financial data
-          dayHigh: 0, // Will be fetched from real data
-          dayLow: 0, // Will be fetched from real data
-          yearHigh: 0, // Will be fetched from real data
-          yearLow: 0 // Will be fetched from real data
+          change: change,
+          changePercent: changePercent,
+          volume: candleRes.data.v || 0,
+          marketCap: 'N/A',
+          pe: 0,
+          dayHigh: candleRes.data.h || 0,
+          dayLow: candleRes.data.l || 0,
+          yearHigh: 0,
+          yearLow: 0
         });
       }
     } catch (error) {
-      console.error('Error fetching stock data:', error);
+      // Log error to error_logs
+      await supabase.from('error_logs').insert({
+        function_name: 'Stock-fetchStockData',
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+        metadata: { symbol }
+      });
     } finally {
       setLoading(false);
     }

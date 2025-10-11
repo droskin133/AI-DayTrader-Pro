@@ -56,11 +56,12 @@ export const WatchlistWidget: React.FC = () => {
     
     setLoading(true);
     try {
-      // Fetch watchlist symbols
+      // Fetch watchlist symbols with sort order
       const { data: watchlistData, error: watchlistError } = await supabase
         .from('watchlist')
-        .select('ticker')
-        .eq('user_id', user.id);
+        .select('ticker, sort_order')
+        .eq('user_id', user.id)
+        .order('sort_order', { ascending: true });
 
       if (watchlistError) throw watchlistError;
 

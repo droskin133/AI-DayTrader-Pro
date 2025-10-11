@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Send, Brain, Lightbulb, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 
 export const AIMarketAssistant: React.FC = () => {
@@ -17,6 +18,28 @@ export const AIMarketAssistant: React.FC = () => {
     "Find opportunities in beaten-down stocks",
     "What are the key economic indicators to watch?"
   ];
+
+  useEffect(() => {
+    // Set up realtime subscriptions
+    const priceCh = supabase
+      .channel("stock_prices")
+      .on("postgres_changes", { event: "*", schema: "public", table: "stock_prices" }, () => {
+        // Refresh on price updates
+      })
+      .subscribe();
+
+    const newsCh = supabase
+      .channel("news_events")
+      .on("postgres_changes", { event: "*", schema: "public", table: "news_events" }, () => {
+        // Refresh on news updates
+      })
+      .subscribe();
+
+    return () => {
+      priceCh.unsubscribe();
+      newsCh.unsubscribe();
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,9 +55,8 @@ export const AIMarketAssistant: React.FC = () => {
       try {
         const { data, error } = await supabase.functions.invoke('ai-trader-pro', {
           body: { 
-            symbol: 'SPY',
-            timeframe: '1D',
-            query
+            symbol: query.toUpperCase() || 'SPY',
+            timeframe: '1D'
           }
         });
 
@@ -45,11 +67,16 @@ export const AIMarketAssistant: React.FC = () => {
           break;
         }
       } catch (error) {
-        console.error('AI Assistant error (attempt ' + (retries + 1) + '):', error);
         retries++;
         
         if (retries >= maxRetries) {
-          setResponse('');
+          setResponse('Unable to fetch analysis. Please try again.');
+          // Log error to error_logs
+          await supabase.from('error_logs').insert({
+            function_name: 'AIMarketAssistant',
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+            metadata: { query, retries }
+          });
         } else {
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
@@ -123,15 +150,13 @@ export const AIMarketAssistant: React.FC = () => {
         {/* Loading Skeleton */}
         {loading && !response && (
           <div className="border-t pt-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="animate-pulse h-4 w-4 bg-muted rounded" />
-              <div className="animate-pulse h-4 w-32 bg-muted rounded" />
-            </div>
+            <Skeleton className="h-4 w-32 mb-2" />
             <div className="space-y-2">
-              <div className="animate-pulse h-3 w-full bg-muted rounded" />
-              <div className="animate-pulse h-3 w-3/4 bg-muted rounded" />
-              <div className="animate-pulse h-3 w-5/6 bg-muted rounded" />
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-3/4" />
+              <Skeleton className="h-3 w-5/6" />
             </div>
+            <p className="text-xs text-muted-foreground mt-2">Fetching live market data...</p>
           </div>
         )}
       </CardContent>

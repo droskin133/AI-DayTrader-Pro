@@ -204,7 +204,20 @@ Return JSON: { direction, signal_strength, notable_activity: [], recommendation 
     });
 
   } catch (err) {
-    console.error('ai-flows error:', err);
+    // Log error to error_logs
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      
+      await supabase.from('error_logs').insert({
+        function_name: 'ai-flows',
+        error_message: err instanceof Error ? err.message : 'Flow analysis failed',
+        metadata: { error: String(err) }
+      });
+    } catch {}
+    
     return new Response(JSON.stringify({ 
       error: err instanceof Error ? err.message : 'Flow analysis failed',
       flows: { congressional: [], institutional: [], insider: [] }

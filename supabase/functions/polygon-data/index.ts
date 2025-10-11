@@ -28,11 +28,26 @@ serve(async (req) => {
     }
 
     const apiKey = requireEnv("POLYGON_API_KEY");
-    const res = await fetch(`https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?apiKey=${apiKey}`);
     
-    if (!res.ok) {
-      throw new Error(`Polygon API error: ${res.status}`);
-    }
+    // Add retry with backoff
+    const retryWithBackoff = async (fn: () => Promise<Response>, maxRetries = 3): Promise<Response> => {
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          const res = await fn();
+          if (res.ok) return res;
+          if (i === maxRetries - 1) throw new Error(`Polygon API error: ${res.status}`);
+        } catch (error) {
+          if (i === maxRetries - 1) throw error;
+        }
+        const delay = Math.pow(2, i) * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      throw new Error('Max retries exceeded');
+    };
+    
+    const res = await retryWithBackoff(() => 
+      fetch(`https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?apiKey=${apiKey}`)
+    );
     
     const data = await res.json();
     
@@ -68,7 +83,19 @@ serve(async (req) => {
     });
 
   } catch (err) {
-    console.error("Error in polygon-data:", err);
+    // Log error to error_logs
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      
+      await supabase.from('error_logs').insert({
+        function_name: 'polygon-data',
+        error_message: err instanceof Error ? err.message : 'Unknown error',
+        metadata: { error: String(err) }
+      });
+    } catch {}
     
     return new Response(JSON.stringify({ 
       error: err instanceof Error ? err.message : 'Unknown error'

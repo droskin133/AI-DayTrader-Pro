@@ -23,8 +23,27 @@ const Alerts: React.FC = () => {
   });
 
   useEffect(() => {
+    if (!user) return;
+    
     fetchAlertStats();
-  }, []);
+    
+    // Set up real-time subscription for alerts
+    const channel = supabase
+      .channel('alerts-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'alerts',
+        filter: `user_id=eq.${user.id}`
+      }, () => {
+        fetchAlertStats();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const fetchAlertStats = async () => {
     try {

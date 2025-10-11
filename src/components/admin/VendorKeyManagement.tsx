@@ -166,8 +166,9 @@ export const VendorKeyManagement: React.FC = () => {
   };
 
   const maskKey = (key: string) => {
-    if (key.length <= 8) return '*'.repeat(key.length);
-    return key.substring(0, 4) + '*'.repeat(Math.max(0, key.length - 8)) + key.substring(key.length - 4);
+    // Only show last 4 characters for security
+    if (key.length <= 4) return '****';
+    return '****' + key.substring(key.length - 4);
   };
 
   if (loading) {

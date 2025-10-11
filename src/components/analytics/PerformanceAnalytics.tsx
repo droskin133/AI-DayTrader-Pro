@@ -63,10 +63,33 @@ export const PerformanceAnalytics: React.FC = () => {
         setPerformanceData([]);
       } catch (error) {
         console.error('Error fetching performance data:', error);
+        
+        // Log error to error_logs table
+        await supabase.from('error_logs').insert({
+          function_name: 'PerformanceAnalytics',
+          error_message: error instanceof Error ? error.message : 'Unknown error',
+          metadata: { component: 'PerformanceAnalytics' }
+        });
       }
     };
 
     fetchPerformanceData();
+    
+    // Set up real-time subscription for ai_run_metrics
+    const channel = supabase
+      .channel('performance-realtime')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'ai_run_metrics'
+      }, () => {
+        fetchPerformanceData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [timeframe]);
 
   const getMetricColor = (value: number, isPositive: boolean = true): string => {

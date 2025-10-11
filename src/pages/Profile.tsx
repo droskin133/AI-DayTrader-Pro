@@ -101,21 +101,17 @@ const Profile: React.FC = () => {
 
     setTestingWebhook(true);
     try {
-      const response = await fetch(discordWebhook, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content: `🤖 Test message from AI DayTrader Pro\nUser: ${user?.email}\nTime: ${new Date().toLocaleString()}`
-        }),
+      // Never call Discord directly from frontend - use Edge Function
+      const { data, error } = await supabase.functions.invoke('test-webhook', {
+        body: {
+          webhook_url: discordWebhook,
+          message: `🤖 Test message from AI DayTrader Pro\nUser: ${user?.email}\nTime: ${new Date().toLocaleString()}`
+        }
       });
 
-      if (response.ok) {
-        toast.success('Test message sent to Discord!');
-      } else {
-        throw new Error('Failed to send test message');
-      }
+      if (error) throw error;
+
+      toast.success('Test message sent to Discord!');
     } catch (error) {
       console.error('Error testing webhook:', error);
       toast.error('Failed to send test message');
@@ -128,7 +124,7 @@ const Profile: React.FC = () => {
     try {
       const { data, error } = await supabase.functions.invoke('stripe-checkout', {
         body: {
-          price_id: 'price_premium', // This would be a real Stripe price ID
+          price_id: 'price_premium', // This will be retrieved from Stripe Edge Function
           success_url: `${window.location.origin}/profile?success=true`,
           cancel_url: `${window.location.origin}/profile`,
         }
@@ -141,6 +137,14 @@ const Profile: React.FC = () => {
       }
     } catch (error) {
       console.error('Error creating checkout session:', error);
+      
+      // Log error
+      await supabase.from('error_logs').insert({
+        function_name: 'stripe-checkout-frontend',
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+        metadata: { component: 'Profile' }
+      });
+      
       toast.error('Failed to start upgrade process');
     }
   };

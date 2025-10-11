@@ -84,12 +84,12 @@ export const DisclaimerModal: React.FC<DisclaimerModalProps> = ({ isOpen, onAcce
     try {
       setAccepting(true);
       
-      const { error } = await supabase
-        .from('legal_acceptances')
-        .insert({
-          user_id: user.id,
+      // Call legal-accept Edge Function
+      const { error } = await supabase.functions.invoke('legal-accept', {
+        body: {
           legal_text_id: legalText.id
-        });
+        }
+      });
 
       if (error) {
         console.error('Error accepting legal terms:', error);
@@ -101,6 +101,14 @@ export const DisclaimerModal: React.FC<DisclaimerModalProps> = ({ isOpen, onAcce
       onAccept();
     } catch (error) {
       console.error('Error accepting legal terms:', error);
+      
+      // Log error
+      await supabase.from('error_logs').insert({
+        function_name: 'DisclaimerModal',
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+        metadata: { legal_text_id: legalText.id }
+      });
+      
       toast.error('Failed to accept legal terms');
     } finally {
       setAccepting(false);

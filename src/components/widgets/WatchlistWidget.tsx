@@ -29,6 +29,23 @@ export const WatchlistWidget: React.FC = () => {
   useEffect(() => {
     if (user) {
       fetchWatchlist();
+      
+      // Set up real-time subscription for watchlist
+      const channel = supabase
+        .channel('watchlist-realtime')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'watchlist',
+          filter: `user_id=eq.${user.id}`
+        }, () => {
+          fetchWatchlist();
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     } else {
       setLoading(false);
     }

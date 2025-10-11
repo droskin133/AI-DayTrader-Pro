@@ -51,15 +51,17 @@ serve(async (req) => {
     const aiData = await response.json();
     const alertCondition = aiData.choices[0].message.content.trim();
 
-    // Insert into user_alerts
+    // Insert into alerts table (primary table)
     const { data: alertData, error: alertError } = await supabase
-      .from('user_alerts')
+      .from('alerts')
       .insert({
         user_id,
-        symbol,
-        alert_type: 'custom',
-        condition_text: alertCondition,
-        active: true
+        owner: user_id,
+        ticker: symbol,
+        condition: alertCondition,
+        rule_json: { type: 'custom', prompt },
+        source: 'ai_generated',
+        status: 'active'
       })
       .select()
       .single();
@@ -77,7 +79,19 @@ serve(async (req) => {
         status: 'active'
       });
 
-    if (aiAlertError) throw aiAlertError;
+    if (aiAlertError) {
+      console.error('Error inserting AI alert tracking:', aiAlertError);
+    }
+    
+    // Log to ai_learning_log
+    await supabase.from('ai_learning_log').insert({
+      user_id,
+      ticker: symbol,
+      mode: 'alert_generation',
+      input_text: prompt,
+      input: { symbol, prompt },
+      output: { alert_condition: alertCondition, alert_id: alertData.id }
+    });
 
     return new Response(
       JSON.stringify({
@@ -90,6 +104,14 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in ai-generate-custom-alert:', error);
+    
+    // Log error
+    await supabase.from('error_logs').insert({
+      function_name: 'ai-generate-custom-alert',
+      error_message: (error as Error).message,
+      metadata: { error: String(error) }
+    });
+    
     return new Response(
       JSON.stringify({ error: 'Failed to generate custom alert' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

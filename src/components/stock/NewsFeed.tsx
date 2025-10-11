@@ -32,26 +32,63 @@ export function NewsFeed({ symbols = [] }: NewsFeedProps) {
       if (symbols.length === 0) return;
       
       setLoading(true);
-      const allNews: NewsItem[] = [];
       
-      for (const symbol of symbols) {
-        const symbolNews = await fetchStockNews(symbol);
-        allNews.push(...symbolNews);
-      }
-      
-      // Sort by date and remove duplicates
-      const uniqueNews = allNews
-        .filter((item, index, self) => 
-          index === self.findIndex(t => t.id === item.id)
-        )
-        .sort((a, b) => b.datetime - a.datetime)
-        .slice(0, 10);
+      try {
+        // Fetch from news_events table instead of external API
+        const { data: newsData, error } = await supabase
+          .from('news_events')
+          .select('*')
+          .contains('tickers', symbols)
+          .order('published_at', { ascending: false })
+          .limit(10);
+
+        if (error) throw error;
+
+        // Map to NewsItem format
+        const mappedNews: NewsItem[] = (newsData || []).map((item: any) => ({
+          category: 'general',
+          datetime: new Date(item.published_at).getTime() / 1000,
+          headline: item.headline || '',
+          id: item.id || Math.random(),
+          image: '',
+          related: item.tickers?.[0] || '',
+          source: item.source || 'Unknown',
+          summary: item.body || '',
+          url: item.source_url || ''
+        }));
         
-      setNews(uniqueNews);
-      setLoading(false);
+        setNews(mappedNews);
+      } catch (error) {
+        console.error('Error fetching news:', error);
+        
+        // Log error
+        await supabase.from('error_logs').insert({
+          function_name: 'NewsFeed',
+          error_message: error instanceof Error ? error.message : 'Unknown error',
+          metadata: { symbols }
+        });
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchNews();
+    
+    // Set up real-time subscription for news_events
+    const channel = supabase
+      .channel('news-realtime')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'news_events'
+      }, () => {
+        fetchNews();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [symbols]);
 
   const explainNews = async (newsItem: NewsItem) => {

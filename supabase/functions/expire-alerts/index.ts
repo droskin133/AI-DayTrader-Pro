@@ -20,14 +20,23 @@ serve(async (req) => {
   try {
     console.log('Expiring alerts that have passed their expiration date');
     
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("alerts")
       .update({ status: "expired" })
       .lt("expires_at", new Date().toISOString())
-      .eq("status", "active");
+      .eq("status", "active")
+      .select();
 
     if (error) {
       console.error('Error expiring alerts:', error);
+      
+      // Log error
+      await supabase.from('error_logs').insert({
+        function_name: 'expire-alerts',
+        error_message: error.message,
+        metadata: { error: String(error) }
+      });
+      
       return new Response(
         JSON.stringify({ success: false, error: error.message }), 
         { 
@@ -37,13 +46,27 @@ serve(async (req) => {
       );
     }
 
-    console.log('Successfully expired alerts');
+    const expiredCount = data?.length || 0;
+    console.log(`Successfully expired ${expiredCount} alerts`);
+    
     return new Response(
-      JSON.stringify({ success: true }), 
+      JSON.stringify({ 
+        success: true, 
+        expired_count: expiredCount,
+        timestamp: new Date().toISOString()
+      }), 
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error('Unexpected error:', error);
+    
+    // Log error
+    await supabase.from('error_logs').insert({
+      function_name: 'expire-alerts',
+      error_message: (error as Error).message,
+      metadata: { error: String(error) }
+    });
+    
     return new Response(
       JSON.stringify({ success: false, error: 'Internal server error' }), 
       { 

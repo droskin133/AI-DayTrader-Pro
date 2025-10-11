@@ -92,6 +92,13 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in news-ingest function:', error);
     
+    // Log error
+    await supabase.from('error_logs').insert({
+      function_name: 'news-ingest',
+      error_message: (error as Error).message,
+      metadata: { error: String(error) }
+    });
+    
     return new Response(
       JSON.stringify({ error: 'Failed to ingest news data' }),
       { 

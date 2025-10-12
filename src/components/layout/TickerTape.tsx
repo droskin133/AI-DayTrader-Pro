@@ -55,7 +55,7 @@ export const TickerTape: React.FC = () => {
         const missing = allSymbols.filter((s) => !grouped[s]?.length);
         if (missing.length) {
           const { data } = await supabase.functions.invoke('live-stock-price', {
-            body: { symbols: missing },
+            body: { tickers: missing },
           });
           if (data && Array.isArray(data)) {
             data.forEach((item: any) => {

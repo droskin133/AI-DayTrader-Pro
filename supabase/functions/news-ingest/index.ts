@@ -16,71 +16,50 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
+  
   const NEWS_API_KEY = Deno.env.get("NEWS_API_KEY");
-  const FINNHUB_API_KEY = Deno.env.get("FINNHUB_API_KEY");
 
   try {
-    const articles = [];
-
-    // Fetch from NewsAPI
-    if (NEWS_API_KEY) {
-      const newsApiResponse = await fetch(
-        `https://newsapi.org/v2/top-headlines?category=business&apiKey=${NEWS_API_KEY}`
-      );
-      const newsData = await newsApiResponse.json();
-      
-      for (const article of newsData.articles ?? []) {
-        articles.push({
-          headline: article.title,
-          source: article.source?.name || 'NewsAPI',
-          url: article.url,
-          published_at: article.publishedAt,
-          symbol: null
-        });
-      }
+    if (!NEWS_API_KEY) {
+      throw new Error('NEWS_API_KEY not configured');
     }
 
-    // Fetch from Finnhub
-    if (FINNHUB_API_KEY) {
-      const finnhubResponse = await fetch(
-        `https://finnhub.io/api/v1/news?category=general&token=${FINNHUB_API_KEY}`
-      );
-      const finnhubData = await finnhubResponse.json();
-      
-      for (const item of finnhubData?.slice(0, 20) ?? []) {
-        articles.push({
-          headline: item.headline,
-          source: item.source || 'Finnhub',
-          url: item.url,
-          published_at: new Date(item.datetime * 1000).toISOString(),
-          symbol: item.related || null
-        });
-      }
+    const response = await fetch(
+      `https://newsapi.org/v2/top-headlines?category=business&apiKey=${NEWS_API_KEY}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`NewsAPI error: ${response.status}`);
     }
 
-    // Insert articles into database
+    const newsData = await response.json();
+    
+    const articles = newsData.articles?.map((article: any) => ({
+      symbol: article.symbol || null,
+      title: article.title,
+      source: article.source?.name || 'Unknown',
+      published_at: article.publishedAt,
+      url: article.url
+    })) || [];
+
     if (articles.length > 0) {
-      const { error } = await supabase.from('news').upsert(articles, {
-        onConflict: 'url',
-        ignoreDuplicates: true
-      });
-
+      const { error } = await supabase.from('news_events').upsert(articles);
       if (error) throw error;
     }
 
     return new Response(
-      JSON.stringify({ success: true, count: articles.length }),
+      JSON.stringify({ status: 'ok', count: articles.length }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
-  } catch (e) {
+  } catch (error) {
     await supabase.from('error_logs').insert({
-      function: 'news-ingest',
-      message: String(e),
-      payload: { error: e instanceof Error ? e.message : String(e) }
+      context: 'news-ingest',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : null
     });
-    
+
     return new Response(
-      JSON.stringify({ error: 'Failed to ingest news' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }

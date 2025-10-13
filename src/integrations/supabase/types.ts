@@ -1722,6 +1722,36 @@ export type Database = {
         }
         Relationships: []
       }
+      news: {
+        Row: {
+          headline: string
+          id: number
+          inserted_at: string | null
+          published_at: string
+          source: string
+          symbol: string | null
+          url: string
+        }
+        Insert: {
+          headline: string
+          id?: number
+          inserted_at?: string | null
+          published_at: string
+          source: string
+          symbol?: string | null
+          url: string
+        }
+        Update: {
+          headline?: string
+          id?: number
+          inserted_at?: string | null
+          published_at?: string
+          source?: string
+          symbol?: string | null
+          url?: string
+        }
+        Relationships: []
+      }
       news_cache: {
         Row: {
           created_at: string | null
@@ -2262,6 +2292,36 @@ export type Database = {
           sent_at?: string | null
           title?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      quotes: {
+        Row: {
+          high: number | null
+          low: number | null
+          open: number | null
+          prev_close: number | null
+          price: number
+          symbol: string
+          updated_at: string | null
+        }
+        Insert: {
+          high?: number | null
+          low?: number | null
+          open?: number | null
+          prev_close?: number | null
+          price: number
+          symbol: string
+          updated_at?: string | null
+        }
+        Update: {
+          high?: number | null
+          low?: number | null
+          open?: number | null
+          prev_close?: number | null
+          price?: number
+          symbol?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -2893,6 +2953,24 @@ export type Database = {
         }
         Relationships: []
       }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       vendor_configs: {
         Row: {
           api_key: string
@@ -3204,6 +3282,10 @@ export type Database = {
           count: number
         }[]
       }
+      is_authenticated: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_service_role: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -3294,7 +3376,9 @@ export type Database = {
     Enums: {
       ai_tool_enum: "alpha_scout" | "chart_gpt" | "deep_scanner" | "news_sweep"
       alert_source_enum: "user" | "ai" | "community"
+      alert_status: "active" | "triggered" | "disabled"
       alert_type_enum: "price" | "volume" | "news" | "technical" | "custom"
+      market_source: "finnhub" | "polygon" | "quiver" | "sec" | "newsapi"
       notification_type_enum: "alert_trigger" | "system" | "news"
       plan_enum: "basic" | "premium" | "trial"
       plan_t: "Free" | "Basic" | "Premium" | "President"
@@ -3436,7 +3520,9 @@ export const Constants = {
     Enums: {
       ai_tool_enum: ["alpha_scout", "chart_gpt", "deep_scanner", "news_sweep"],
       alert_source_enum: ["user", "ai", "community"],
+      alert_status: ["active", "triggered", "disabled"],
       alert_type_enum: ["price", "volume", "news", "technical", "custom"],
+      market_source: ["finnhub", "polygon", "quiver", "sec", "newsapi"],
       notification_type_enum: ["alert_trigger", "system", "news"],
       plan_enum: ["basic", "premium", "trial"],
       plan_t: ["Free", "Basic", "Premium", "President"],

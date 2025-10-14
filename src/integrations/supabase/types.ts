@@ -752,6 +752,30 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_fix_log: {
+        Row: {
+          change: Json
+          component: string
+          confidence: number | null
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          change: Json
+          component: string
+          confidence?: number | null
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          change?: Json
+          component?: string
+          confidence?: number | null
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -1656,6 +1680,42 @@ export type Database = {
         }
         Relationships: []
       }
+      market_data: {
+        Row: {
+          eps: number | null
+          float: number | null
+          last_trade_price: number | null
+          pe: number | null
+          percent_change: number | null
+          short_interest: number | null
+          symbol: string
+          updated_at: string | null
+          volume: number | null
+        }
+        Insert: {
+          eps?: number | null
+          float?: number | null
+          last_trade_price?: number | null
+          pe?: number | null
+          percent_change?: number | null
+          short_interest?: number | null
+          symbol: string
+          updated_at?: string | null
+          volume?: number | null
+        }
+        Update: {
+          eps?: number | null
+          float?: number | null
+          last_trade_price?: number | null
+          pe?: number | null
+          percent_change?: number | null
+          short_interest?: number | null
+          symbol?: string
+          updated_at?: string | null
+          volume?: number | null
+        }
+        Relationships: []
+      }
       market_data_cache: {
         Row: {
           created_at: string | null
@@ -1934,6 +1994,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      news_feed: {
+        Row: {
+          headline: string
+          id: string
+          ingested_at: string | null
+          published_at: string
+          sentiment: number | null
+          source: string
+          symbol: string | null
+          url: string
+        }
+        Insert: {
+          headline: string
+          id?: string
+          ingested_at?: string | null
+          published_at: string
+          sentiment?: number | null
+          source: string
+          symbol?: string | null
+          url: string
+        }
+        Update: {
+          headline?: string
+          id?: string
+          ingested_at?: string | null
+          published_at?: string
+          sentiment?: number | null
+          source?: string
+          symbol?: string | null
+          url?: string
+        }
+        Relationships: []
       }
       news_watches: {
         Row: {
@@ -2920,6 +3013,32 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_settings: {
         Row: {
           ai_suggestions_default: boolean
@@ -2952,6 +3071,35 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_watchlist: {
+        Row: {
+          created_at: string | null
+          id: string
+          symbol: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          symbol: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          symbol?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_watchlist_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       users: {
         Row: {
@@ -3276,6 +3424,13 @@ export type Database = {
           ts: string
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       increment_rate_limit: {
         Args: { p_bucket: string; p_user_id: string; p_window_seconds: number }
         Returns: {
@@ -3378,6 +3533,7 @@ export type Database = {
       alert_source_enum: "user" | "ai" | "community"
       alert_status: "active" | "triggered" | "disabled"
       alert_type_enum: "price" | "volume" | "news" | "technical" | "custom"
+      app_role: "free" | "premium" | "admin"
       market_source: "finnhub" | "polygon" | "quiver" | "sec" | "newsapi"
       notification_type_enum: "alert_trigger" | "system" | "news"
       plan_enum: "basic" | "premium" | "trial"
@@ -3522,6 +3678,7 @@ export const Constants = {
       alert_source_enum: ["user", "ai", "community"],
       alert_status: ["active", "triggered", "disabled"],
       alert_type_enum: ["price", "volume", "news", "technical", "custom"],
+      app_role: ["free", "premium", "admin"],
       market_source: ["finnhub", "polygon", "quiver", "sec", "newsapi"],
       notification_type_enum: ["alert_trigger", "system", "news"],
       plan_enum: ["basic", "premium", "trial"],

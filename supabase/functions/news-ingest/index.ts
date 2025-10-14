@@ -17,33 +17,78 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
   
-  const NEWS_API_KEY = Deno.env.get("NEWS_API_KEY");
+  const NEWSAPI_KEY = Deno.env.get("NEWSAPI_KEY");
+  const FINNHUB_API_KEY = Deno.env.get("FINNHUB_API_KEY");
+  const POLYGON_API_KEY = Deno.env.get("POLYGON_API_KEY");
 
   try {
-    if (!NEWS_API_KEY) {
-      throw new Error('NEWS_API_KEY not configured');
+    const articles: any[] = [];
+
+    // Fetch from NewsAPI
+    if (NEWSAPI_KEY) {
+      const newsApiResponse = await fetch(
+        `https://newsapi.org/v2/top-headlines?category=business&apiKey=${NEWSAPI_KEY}`
+      );
+      if (newsApiResponse.ok) {
+        const newsData = await newsApiResponse.json();
+        for (const article of newsData.articles || []) {
+          articles.push({
+            symbol: null,
+            headline: article.title,
+            source: article.source?.name || 'NewsAPI',
+            published_at: new Date(article.publishedAt).toISOString(),
+            url: article.url,
+            sentiment: null,
+            ingested_at: new Date().toISOString()
+          });
+        }
+      }
     }
 
-    const response = await fetch(
-      `https://newsapi.org/v2/top-headlines?category=business&apiKey=${NEWS_API_KEY}`
-    );
-
-    if (!response.ok) {
-      throw new Error(`NewsAPI error: ${response.status}`);
+    // Fetch from Finnhub
+    if (FINNHUB_API_KEY) {
+      const finnhubResponse = await fetch(
+        `https://finnhub.io/api/v1/news?category=general&token=${FINNHUB_API_KEY}`
+      );
+      if (finnhubResponse.ok) {
+        const finnhubData = await finnhubResponse.json();
+        for (const item of finnhubData || []) {
+          articles.push({
+            symbol: item.related || null,
+            headline: item.headline,
+            source: item.source || 'Finnhub',
+            published_at: new Date(item.datetime * 1000).toISOString(),
+            url: item.url,
+            sentiment: item.sentiment,
+            ingested_at: new Date().toISOString()
+          });
+        }
+      }
     }
 
-    const newsData = await response.json();
-    
-    const articles = newsData.articles?.map((article: any) => ({
-      symbol: article.symbol || null,
-      title: article.title,
-      source: article.source?.name || 'Unknown',
-      published_at: article.publishedAt,
-      url: article.url
-    })) || [];
+    // Fetch from Polygon
+    if (POLYGON_API_KEY) {
+      const polygonResponse = await fetch(
+        `https://api.polygon.io/v2/reference/news?apiKey=${POLYGON_API_KEY}`
+      );
+      if (polygonResponse.ok) {
+        const polygonData = await polygonResponse.json();
+        for (const item of polygonData.results || []) {
+          articles.push({
+            symbol: item.tickers?.[0] || null,
+            headline: item.title,
+            source: item.publisher?.name || 'Polygon',
+            published_at: new Date(item.published_utc).toISOString(),
+            url: item.article_url,
+            sentiment: null,
+            ingested_at: new Date().toISOString()
+          });
+        }
+      }
+    }
 
     if (articles.length > 0) {
-      const { error } = await supabase.from('news_events').upsert(articles);
+      const { error } = await supabase.from('news_feed').upsert(articles);
       if (error) throw error;
     }
 
@@ -54,8 +99,8 @@ serve(async (req) => {
   } catch (error) {
     await supabase.from('error_logs').insert({
       context: 'news-ingest',
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : null
+      payload: { error: error instanceof Error ? error.message : String(error) },
+      created_at: new Date().toISOString()
     });
 
     return new Response(
